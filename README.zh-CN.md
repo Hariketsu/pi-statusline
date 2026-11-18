@@ -35,7 +35,7 @@ pi install git:github.com/<you>/pi-statusline
 | 时长 | ` 1h2m` | 首个会话条目的时间戳 → 现在 |
 | 状态 | `2 jobs` | 其它扩展的 `ctx.ui.setStatus()` |
 
-颜色默认是**色块**：模型、目录、分支、增删、上下文各占一块 Gruvbox 底色（按终端明暗自动选 Light/Dark）；思考等级、缓存率、生成速度、时长、其它扩展状态这些「安静信息」用彩色文字，不再套背景块——这样一行里有主次，而不是一排等重的方块。`style: "text"` 去掉背景，`style: "theme"` 走 pi 自己的 token。
+颜色是**彩色文字**，按终端明暗自动选 Gruvbox Light/Dark：模型青、目录绿、分支粉、`+` 绿 `−` 红，其余（思考等级、上下文、缓存、速度、时长、状态）一律安静灰，分隔符 `·` 暗灰——和原 Claude Code 版一样的克制。`style: "chips"` 才会画背景块，`style: "theme"` 走 pi 自己的 token。
 
 ### 数字的口径
 
@@ -51,13 +51,13 @@ pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`
 
 | `style` | 行为 |
 |---|---|
-| `chips`（默认） | 按终端明暗选 Gruvbox Dark / Light，画成背景色块 |
-| `text` | 同一套颜色只做前景色，不画背景 |
+| `text`（默认） | 按终端明暗选 Gruvbox Dark / Light 前景色，不画背景 |
+| `chips` | 同一套颜色画成背景色块 |
 | `theme` | 走 pi 自己的语义 token：任何主题都适配，但饱和度低 |
 
 这也是同行的做法：`pi-powerline-footer` 把身份色写死（`model: "#d787af"`、`path: "#00afaf"`），只有状态色才映射主题 token；`pi-airline` 直接用终端 ANSI 调色板。pi 的 `system` 主题为了对比度会压饱和度，纯主题 token 在浅色终端上必然糊成灰线。
 
-只有在终端报告 truecolor 时才用固定色；256 色或 16 色终端会自动退回主题 token，不会输出显示不了的转义序列。模型名、`+N`/`−N`、上下文、缓存、生成速度都加了粗体。
+只有在终端报告 truecolor 时才用固定色；256 色或 16 色终端会自动退回主题 token。只有模型名加粗，其余保持原版那种轻量感。
 
 ### 窄屏
 
@@ -74,7 +74,7 @@ pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`
     "separator": " · ",
     "modelNames": { "vendor/chat-model": "chat model" },
     "icons": "nerd",
-    "style": "chips",
+    "style": "text",
     "showStatuses": true,
     "tickMs": 1000,
     "gitTtlMs": 5000
@@ -88,7 +88,7 @@ pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`
 | `separator` | chips 默认 `" "`，其余 `" · "` | 段之间的分隔符 |
 | `modelNames` | `{}` | 模型显示名覆盖，可用完整 id 或最后一段 |
 | `icons` | `"nerd"` | `"nerd"`（Nerd Font 字形）/ `"emoji"` / `"none"` |
-| `style` | `"chips"` | `"chips"`（色块）/ `"text"`（只上色）/ `"theme"`（pi 主题 token） |
+| `style` | `"text"` | `"text"`（彩色文字）/ `"chips"`（色块）/ `"theme"`（pi 主题 token） |
 | `showStatuses` | `true` | 是否追加其它扩展的状态 |
 | `tickMs` | `1000` | 时长段的刷新间隔 |
 | `gitTtlMs` | `5000` | git 快照有效期，过期后台刷新 |

@@ -53,7 +53,8 @@ test("identity segments carry distinct roles, not just text", () => {
 	assert.equal(roleOf("model", baseInput()), "accent");
 	assert.equal(roleOf("dir", baseInput()), "path");
 	assert.equal(roleOf("git", baseInput()), "vcs");
-	assert.equal(roleOf("tps", baseInput()), "speed");
+	assert.equal(roleOf("thinking", baseInput()), "dim");
+	assert.equal(roleOf("tps", baseInput()), "muted");
 });
 
 test("diff splits into green additions and red deletions", () => {
@@ -61,8 +62,8 @@ test("diff splits into green additions and red deletions", () => {
 	assert.deepEqual(
 		parts.map((part) => [part.text, part.role, part.bold === true]),
 		[
-			["+12", "success", true],
-			["−3", "error", true],
+			["+12", "success", false],
+			["−3", "error", false],
 		],
 	);
 });
@@ -83,11 +84,11 @@ test("git and diff disappear when there is nothing to show", () => {
 });
 
 test("context and cache colors follow their tiers", () => {
-	assert.equal(roleOf("context", baseInput({ contextPercent: 40 })), "success");
+	assert.equal(roleOf("context", baseInput({ contextPercent: 40 })), "dim");
 	assert.equal(roleOf("context", baseInput({ contextPercent: 75 })), "warning");
 	assert.equal(roleOf("context", baseInput({ contextPercent: 95 })), "error");
 
-	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 95 })), "success");
+	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 95 })), "muted");
 	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 60 })), "muted");
 	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 20 })), "warning");
 });

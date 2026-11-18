@@ -43,12 +43,11 @@ back to pi's built-in one.
 | Duration | ` 1h2m` | first session entry timestamp → now |
 | Statuses | `2 jobs` | `ctx.ui.setStatus()` from other extensions |
 
-Colors are blocks, not just text: the model, directory, branch, diff and context are
-painted as Gruvbox chips (light or dark, picked from the terminal's appearance), while
-quiet facts — thinking level, cache rate, throughput, elapsed time, other extensions'
-statuses — stay plain colored text so the line keeps a hierarchy instead of a row of
-equal blocks. `style: "text"` drops the backgrounds, `style: "theme"` follows pi's own
-tokens. See [Colors](#colors).
+Colors are colored text on a Gruvbox palette, picked from the terminal's appearance:
+the model is teal, the directory green, the branch pink, additions green, deletions red,
+and everything else stays quiet grey, with dim `·` separators — the same restraint as
+the Claude Code bar this came from. `style: "chips"` paints blocks instead, and
+`style: "theme"` follows pi's own tokens. See [Colors](#colors).
 
 ### How the numbers are defined
 
@@ -76,8 +75,8 @@ especially on a light terminal. So the status line paints itself:
 
 | `style` | Behavior |
 |---|---|
-| `chips` (default) | Colored blocks on Gruvbox Dark or Light, picked from the theme's `appearance` |
-| `text` | The same palette as foreground colors, no backgrounds |
+| `text` (default) | Gruvbox Dark or Light foreground colors, no backgrounds |
+| `chips` | The same palette painted as background blocks |
 | `theme` | pi's own semantic tokens: adapts to any theme, but low chroma |
 
 This mirrors what the established packages do: `pi-powerline-footer` hardcodes identity
@@ -88,7 +87,7 @@ up monochrome on a light terminal.
 
 Fixed colors are only used when the terminal reports truecolor support; on a 256 or
 16-color terminal the extension falls back to theme tokens rather than emitting escapes
-the terminal cannot show. Bold marks the model, `+N`/`−N`, context, cache and throughput.
+the terminal cannot show. Only the model name is bold; everything else keeps the original bar's light weight.
 
 ### Width
 
@@ -108,7 +107,7 @@ Everything is optional and lives next to your pi settings, in
     "separator": " · ",
     "modelNames": { "vendor/chat-model": "chat model" },
     "icons": "nerd",
-    "style": "chips",
+    "style": "text",
     "showStatuses": true,
     "tickMs": 1000,
     "gitTtlMs": 5000
@@ -119,10 +118,10 @@ Everything is optional and lives next to your pi settings, in
 | Key | Default | Meaning |
 |---|---|---|
 | `segments` | all, in the order above | Which segments to show, and in what order |
-| `separator` | `" "` for chips, `" · "` otherwise | Text between segments |
+| `separator` | `" "` for chips, `" · "` for text | Text between segments |
 | `modelNames` | `{}` | Display-name overrides, keyed by full model id or its last path segment |
 | `icons` | `"nerd"` | `"nerd"` (Nerd Font glyphs), `"emoji"`, or `"none"` |
-| `style` | `"chips"` | `"chips"` (blocks), `"text"` (foreground only), or `"theme"` (pi tokens) |
+| `style` | `"text"` | `"text"` (foreground colors), `"chips"` (blocks), or `"theme"` (pi tokens) |
 | `showStatuses` | `true` | Append statuses published by other extensions |
 | `tickMs` | `1000` | How often the elapsed-time segment redraws |
 | `gitTtlMs` | `5000` | How long a git snapshot stays fresh before a background refresh |

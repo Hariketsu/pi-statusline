@@ -64,7 +64,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			case "thinking": {
 				const level = input.thinkingLevel;
 				if (!level || level === "off") break;
-				push("thinking", withIcon(icons.thinking, { text: level, role: "muted" }), false, false);
+				push("thinking", withIcon(icons.thinking, { text: level, role: "dim" }), false, false);
 				break;
 			}
 			case "dir":
@@ -78,8 +78,8 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			case "diff": {
 				if (!input.repo || (input.insertions === 0 && input.deletions === 0)) break;
 				const parts: Part[] = [];
-				if (input.insertions > 0) parts.push({ text: `+${input.insertions}`, role: "success", bold: true });
-				if (input.deletions > 0) parts.push({ text: `−${input.deletions}`, role: "error", bold: true });
+				if (input.insertions > 0) parts.push({ text: `+${input.insertions}`, role: "success" });
+				if (input.deletions > 0) parts.push({ text: `−${input.deletions}`, role: "error" });
 				push("diff", parts, true);
 				break;
 			}
@@ -88,14 +88,14 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				const percent = input.contextPercent;
 				const role = contextRole(percent);
 				const text = `${fmtPercent(percent)}/${fmtTokensShort(input.contextWindow)}`;
-				push("context", withIcon(contextGauge(icons, percent), { text, role, bold: true }));
+				push("context", withIcon(contextGauge(icons, percent), { text, role }));
 				break;
 			}
 			case "cache": {
 				if (input.cacheHitRate === null) break;
 				push(
 					"cache",
-					withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate), bold: true }),
+					withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate) }),
 					false,
 					false,
 				);
@@ -103,7 +103,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			}
 			case "tps": {
 				const text = fmtTps(input.tokensPerSecond);
-				if (text) push("tps", withIcon(icons.tps, { text, role: "speed", bold: true }), true, false);
+				if (text) push("tps", withIcon(icons.tps, { text, role: "muted" }), true, false);
 				break;
 			}
 			case "duration": {
@@ -132,13 +132,11 @@ function withIcon(icon: string, part: Part): Part[] {
 function contextRole(percent: number): Role {
 	if (percent > 90) return "error";
 	if (percent > 70) return "warning";
-	return "success";
+	return "dim";
 }
 
 function cacheRole(percent: number): Role {
-	if (percent >= 80) return "success";
-	if (percent >= 50) return "muted";
-	return "warning";
+	return percent < 50 ? "warning" : "muted";
 }
 
 /** Context windows are round numbers: 500k, 1M. */

@@ -47,7 +47,7 @@ export const DEFAULTS: StatuslineConfig = {
 	modelNames: {},
 	showStatuses: true,
 	icons: "nerd",
-	style: "chips",
+	style: "text",
 	tickMs: 1000,
 	gitTtlMs: 5000,
 };

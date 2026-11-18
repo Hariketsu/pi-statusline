@@ -34,10 +34,11 @@ export function renderSegments(segments: Segment[], options: RenderOptions): str
 	const { width, separator, paint, visibleWidth, truncate } = options;
 	const kept = [...segments];
 
+	const pad = paint([{ text: separator, role: "dim" }], false);
 	const build = (): string =>
 		kept
 			.map((segment) => groupRuns(segment.parts).map((parts) => paint(parts, segment.chip !== false)).join(" "))
-			.join(separator);
+			.join(pad);
 
 	let line = build();
 	while (visibleWidth(line) > width) {
