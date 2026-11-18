@@ -43,7 +43,6 @@ test("builds one segment per available fact, in the default order", () => {
 		"git:feat/pi-statusline-plugin",
 		"diff:+12−3",
 		"context:23%/1M",
-		"cache:100%",
 		"tps:42.4t/s",
 		"duration:1h26m",
 	]);
@@ -54,7 +53,7 @@ test("identity segments carry distinct roles, not just text", () => {
 	assert.equal(roleOf("dir", baseInput()), "path");
 	assert.equal(roleOf("git", baseInput()), "vcs");
 	assert.equal(roleOf("thinking", baseInput()), "dim");
-	assert.equal(roleOf("tps", baseInput()), "muted");
+	assert.equal(roleOf("tps", baseInput()), "dim");
 });
 
 test("diff splits into green additions and red deletions", () => {
@@ -88,8 +87,9 @@ test("context and cache colors follow their tiers", () => {
 	assert.equal(roleOf("context", baseInput({ contextPercent: 75 })), "warning");
 	assert.equal(roleOf("context", baseInput({ contextPercent: 95 })), "error");
 
-	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 95 })), "muted");
-	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 60 })), "muted");
+	// A healthy cache is silent; only a miss rate worth acting on is shown.
+	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 95 })), undefined);
+	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 60 })), undefined);
 	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 20 })), "warning");
 });
 
@@ -134,5 +134,5 @@ test("a line that fits keeps every segment", () => {
 		visibleWidth: (text) => text.length,
 		truncate: (text, limit) => text.slice(0, limit),
 	});
-	assert.equal(line, "chat-model max pi-statusline feat/pi-statusline-plugin +12 −3 23%/1M 100% 42.4t/s 1h26m");
+	assert.equal(line, "chat-model max pi-statusline feat/pi-statusline-plugin +12 −3 23%/1M 42.4t/s 1h26m");
 });

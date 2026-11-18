@@ -92,7 +92,8 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				break;
 			}
 			case "cache": {
-				if (input.cacheHitRate === null) break;
+				// A healthy cache is silent; only a miss rate worth acting on is shown.
+				if (input.cacheHitRate === null || input.cacheHitRate >= 50) break;
 				push(
 					"cache",
 					withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate) }),
@@ -103,7 +104,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			}
 			case "tps": {
 				const text = fmtTps(input.tokensPerSecond);
-				if (text) push("tps", withIcon(icons.tps, { text, role: "muted" }), true, false);
+				if (text) push("tps", withIcon(icons.tps, { text, role: "dim" }), true, false);
 				break;
 			}
 			case "duration": {
@@ -114,7 +115,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			case "statuses": {
 				if (options.showStatuses === false || input.statuses.size === 0) break;
 				const text = [...input.statuses.values()].filter(Boolean).join(" · ");
-				if (text) push("statuses", [{ text, role: "muted" }], true, false);
+				if (text) push("statuses", [{ text, role: "dim" }], true, false);
 				break;
 			}
 		}
@@ -135,8 +136,8 @@ function contextRole(percent: number): Role {
 	return "dim";
 }
 
-function cacheRole(percent: number): Role {
-	return percent < 50 ? "warning" : "muted";
+function cacheRole(_percent: number): Role {
+	return "warning";
 }
 
 /** Context windows are round numbers: 500k, 1M. */

@@ -29,6 +29,14 @@ test("a single delta reports no rate yet and keeps the previous one", () => {
 	assert.equal(meter.get().tps, 20);
 });
 
+test("without any stream delta the whole message window is used", () => {
+	const meter = new TpsMeter();
+	meter.start(1000);
+	meter.finish(80, 3000); // no message_update at all
+	assert.equal(meter.get().tps, 40); // 80 tokens over 2s
+	assert.equal(meter.get().ttftMs, null);
+});
+
 test("without usage the delta count is the fallback", () => {
 	const meter = new TpsMeter();
 	meter.start(0);

@@ -136,6 +136,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		if (!enabled || current.mode !== "tui" || !current.hasUI) return;
 
 		current.ui.setFooter((tui, theme, footerData) => {
+			footerStatuses = () => footerData.getExtensionStatuses();
 			redraw = () => tui.requestRender();
 			stopTicker();
 			ticker = setInterval(() => {
@@ -202,9 +203,34 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		pi.on(event, () => redraw?.());
 	}
 
+	/** `/statusline debug`: the raw numbers behind the footer, for when something looks off. */
+	function debugText(current: ExtensionContext): string {
+		const reading = tps.snapshot();
+		const usage = usageCache.get(current);
+		const context = contextCache.get(current);
+		const stats = diff.get(current.cwd);
+		const tpsText = reading.tps === null ? "none" : `${reading.tps.toFixed(1)}t/s`;
+		const parts = [
+			`style=${config.style}`,
+			`icons=${config.icons}`,
+			`tps=${tpsText} (deltas=${reading.deltas}, started=${reading.startedAt !== 0})`,
+			`cache=${usage.cacheHitRate === null ? "none" : `${Math.round(usage.cacheHitRate)}%`}`,
+			`context=${context?.percent ?? "?"}%/${context?.contextWindow ?? "?"}`,
+			`git=${stats.repo ? `${stats.insertions}+/${stats.deletions}-` : "none"}`,
+			`statuses=${footerStatuses().size}`,
+		];
+		return parts.join(" | ");
+	}
+
+	let footerStatuses: () => ReadonlyMap<string, string> = () => new Map();
+
 	pi.registerCommand("statusline", {
-		description: "Toggle the status line footer on or off",
-		handler: async (_args, current) => {
+		description: "Toggle the status line footer, or show its raw numbers with 'debug'",
+		handler: async (args, current) => {
+			if (args.trim() === "debug") {
+				current.ui.notify(debugText(current as ExtensionContext), "info");
+				return;
+			}
 			enabled = !enabled;
 			if (!enabled) {
 				stopTicker();

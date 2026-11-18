@@ -44,11 +44,19 @@ export class TpsMeter {
 		return this.reading;
 	}
 
-	/** The message finished: prefer the provider's own output count. */
+	/**
+	 * The message finished: prefer the provider's own output count.
+	 *
+	 * Not every host delivers stream updates to extensions, so when no delta
+	 * arrived the whole `start()`-to-`finish()` window is used instead. That window
+	 * includes time to first token, which makes the figure slightly conservative —
+	 * better than showing nothing.
+	 */
 	finish(outputTokens: number | null, now = Date.now()): TpsReading {
-		const window = (now - this.firstDeltaAt) / 1000;
+		const from = this.firstDeltaAt || this.startedAt;
+		const window = (now - from) / 1000;
 		const tokens = outputTokens && outputTokens > 0 ? outputTokens : this.deltas;
-		const tps = this.firstDeltaAt && window > 0 && tokens > 0 ? tokens / window : this.reading.tps;
+		const tps = from && window > 0 && tokens > 0 ? tokens / window : this.reading.tps;
 		const ttftMs = this.startedAt && this.firstDeltaAt ? this.firstDeltaAt - this.startedAt : this.reading.ttftMs;
 		this.reading = { tps, ttftMs };
 		return this.reading;
@@ -56,6 +64,11 @@ export class TpsMeter {
 
 	get(): TpsReading {
 		return this.reading;
+	}
+
+	/** Raw counters, for `/statusline debug`. */
+	snapshot(): TpsReading & { deltas: number; startedAt: number; firstDeltaAt: number } {
+		return { ...this.reading, deltas: this.deltas, startedAt: this.startedAt, firstDeltaAt: this.firstDeltaAt };
 	}
 }
 
