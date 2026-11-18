@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@hariketsu/pi-statusline?style=flat-square&color=458588)](https://www.npmjs.com/package/@hariketsu/pi-statusline)
 [![npm downloads](https://img.shields.io/npm/dm/@hariketsu/pi-statusline?style=flat-square&color=689D6A)](https://www.npmjs.com/package/@hariketsu/pi-statusline)
+[![test](https://github.com/Hariketsu/pi-statusline/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Hariketsu/pi-statusline/actions/workflows/test.yml)
 [![license](https://img.shields.io/npm/l/@hariketsu/pi-statusline?style=flat-square&color=B16286)](./LICENSE)
 [![pi package](https://img.shields.io/badge/pi-package-458588?style=flat-square)](https://pi.dev/packages/@hariketsu/pi-statusline)
 

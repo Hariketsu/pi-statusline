@@ -3,8 +3,11 @@
 No build step: pi loads `index.ts` directly and Node runs the TypeScript.
 
 ```sh
-node --test tests/*.test.ts     # 53 tests, no dependencies
+node --test tests/*.test.ts     # 54 tests, no dependencies
 ```
+
+CI runs the same command on Node 22 and 24 (`.github/workflows/test.yml`). Node 22 is the floor
+declared in `engines`; type stripping is what lets it run the TypeScript without a build step.
 
 Tests use Node's built-in runner and its TypeScript support, so `node_modules` stays empty.
 Keep syntax that strip-types supports: no parameter properties, no enums, no decorators.

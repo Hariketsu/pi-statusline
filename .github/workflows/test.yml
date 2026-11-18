@@ -1,0 +1,36 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Superseded runs on the same ref are pointless.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 is the documented floor (engines.node); 24 is what most people run.
+        node: ["22", "24"]
+    name: node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: node --version
+
+      # No dependencies to install: the tests use node's own runner and type stripping,
+      # and the git tests create their own throwaway repositories.
+      - run: node --test tests/*.test.ts
