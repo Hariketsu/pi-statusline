@@ -48,11 +48,11 @@ test("builds one segment per available fact, in the default order", () => {
 test("nerd icons prefix the value but stay out of the number", () => {
 	const segments = buildSegments(baseInput(), { icons: iconsFor("nerd") });
 	const byId = new Map(segments.map((s) => [s.id, s.parts.map((p) => p.text).join("")]));
-	assert.equal(byId.get("thinking"), "\uF09D1 max");
-	assert.equal(byId.get("git"), "\uF418 feat/pi-statusline-plugin +12 −3");
-	assert.ok(byId.get("context")?.startsWith("\uF0873"));
-	assert.equal(byId.get("cache"), "\uF0E7 87%");
-	assert.equal(byId.get("duration"), "\uF0150 1h2m");
+	assert.equal(byId.get("thinking"), "\u{F09D1} max");
+	assert.equal(byId.get("git"), "\u{F418} feat/pi-statusline-plugin +12 −3");
+	assert.ok(byId.get("context")?.startsWith("\u{F0873}"));
+	assert.equal(byId.get("cache"), "\u{F0E7} 87%");
+	assert.equal(byId.get("duration"), "\u{F0150} 1h2m");
 });
 
 test("git counts are colored independently from the branch", () => {

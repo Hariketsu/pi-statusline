@@ -10,6 +10,7 @@
  */
 
 import type { IconSet } from "./icons.ts";
+import type { PaletteMode } from "./palette.ts";
 import type { SegmentId } from "./types.ts";
 
 export interface StatuslineConfig {
@@ -19,6 +20,7 @@ export interface StatuslineConfig {
 	modelNames: Record<string, string>;
 	showStatuses: boolean;
 	icons: IconSet;
+	palette: PaletteMode;
 	/** How often the elapsed-time segment redraws. */
 	tickMs: number;
 	/** How long a git snapshot stays fresh. */
@@ -44,6 +46,7 @@ export const DEFAULTS: StatuslineConfig = {
 	modelNames: {},
 	showStatuses: true,
 	icons: "nerd",
+	palette: "auto",
 	tickMs: 1000,
 	gitTtlMs: 5000,
 };
@@ -61,6 +64,7 @@ export function loadConfig(pi: { getSettings?: () => unknown }): StatuslineConfi
 		modelNames: parseModelNames(value.modelNames),
 		showStatuses: typeof value.showStatuses === "boolean" ? value.showStatuses : DEFAULTS.showStatuses,
 		icons: parseIcons(value.icons),
+		palette: parsePalette(value.palette),
 		tickMs: clampMs(value.tickMs, DEFAULTS.tickMs, 250, 10_000),
 		gitTtlMs: clampMs(value.gitTtlMs, DEFAULTS.gitTtlMs, 500, 60_000),
 	};
@@ -97,6 +101,12 @@ function parseModelNames(value: unknown): Record<string, string> {
 
 function parseIcons(value: unknown): IconSet {
 	return value === "emoji" || value === "none" || value === "nerd" ? value : DEFAULTS.icons;
+}
+
+function parsePalette(value: unknown): PaletteMode {
+	return value === "theme" || value === "gruvbox" || value === "gruvbox-light" || value === "auto"
+		? value
+		: DEFAULTS.palette;
 }
 
 function clampMs(value: unknown, fallback: number, min: number, max: number): number {

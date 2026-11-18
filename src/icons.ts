@@ -1,9 +1,11 @@
 /**
  * Glyphs for each segment.
  *
- * `nerd` uses Nerd Font private-use codepoints; they need a patched font in the
- * terminal. `emoji` is a fallback for fonts that lack them, and `none` renders
- * the status line as plain text.
+ * `nerd` uses Nerd Font private-use codepoints. They are five hex digits, so the
+ * escapes must be `\u{...}`: `"\uF09D1"` would be parsed as `\uF09D` followed by
+ * the character "1", which renders as the wrong glyph plus a stray digit.
+ *
+ * `emoji` is a fallback for fonts without Nerd Font, and `none` renders plain text.
  */
 
 export type IconSet = "nerd" | "emoji" | "none";
@@ -19,12 +21,12 @@ export interface Icons {
 }
 
 const NERD: Icons = {
-	thinking: "\uF09D1", // nf-md-brain
-	git: "\uF418", // nf-oct-git_branch
-	context: ["\uF0873", "\uF0875", "\uF029A", "\uF0874"], // nf-md-gauge_empty/low/mid/full
-	cache: "\uF0E7", // nf-fa-bolt
-	tps: "\uF0E4", // nf-fa-tachometer
-	duration: "\uF0150", // nf-md-clock_outline
+	thinking: "\u{F09D1}", // nf-md-brain
+	git: "\u{F418}", // nf-oct-git_branch
+	context: ["\u{F0873}", "\u{F0875}", "\u{F029A}", "\u{F0874}"], // nf-md-gauge_empty/low/mid/full
+	cache: "\u{F0E7}", // nf-fa-bolt
+	tps: "\u{F0E4}", // nf-fa-tachometer
+	duration: "\u{F0150}", // nf-md-clock_outline
 };
 
 const EMOJI: Icons = {

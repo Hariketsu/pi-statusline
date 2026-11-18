@@ -34,7 +34,7 @@ pi install git:github.com/<you>/pi-statusline
 | 时长 | ` 1h2m` | 首个会话条目的时间戳 → 现在 |
 | 状态 | `2 jobs` | 其它扩展的 `ctx.ui.setStatus()` |
 
-颜色全部走 pi 主题语义 token，不硬编码调色板：模型名 `accent`+加粗，数值 `text`，图标/标签 `muted`/`dim`，`+N` 用 `success`、`−N` 用 `error`，上下文和缓存随劣化切到 `warning`/`error`。
+颜色默认按终端明暗选 Gruvbox 调色板（浅色终端用 Gruvbox Light），也可以切回 pi 主题 token（`palette: "theme"`），见下文「颜色」。
 
 ### 数字的口径
 
@@ -43,6 +43,19 @@ pi install git:github.com/<you>/pi-statusline
 - **生成速度**：取该条 assistant 消息首个与最后一个 `message_update` delta 之间的时间窗，去除以 `usage.output`。下一轮流式期间每秒刷新约 4 次。
 - **行数**：`git diff HEAD --shortstat`，暂存+未暂存对 HEAD 只算一次，未跟踪文件不计；读取用 `--no-optional-locks` 加 5 秒缓存，不会卡住 footer。
 - **故意不显示**：套餐额度窗口（pi 没有 `.rate_limits`）、会话累计 token、花费——`38k tok` 和 `18%/1M` 并列会被读成重复，花费还能在 `/session` 里看到。
+
+### 颜色
+
+pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`/`muted`/`dim` 三档几乎糊成一条灰线。所以状态栏自己上色：
+
+| `palette` | 行为 |
+|---|---|
+| `auto`（默认） | 深色终端用 Gruvbox Dark，浅色终端用 Gruvbox Light，依据主题的 `appearance` |
+| `theme` | 用 pi 自己的语义 token：任何主题都适配，但饱和度低 |
+| `gruvbox` | 固定深色 |
+| `gruvbox-light` | 固定浅色 |
+
+只有在终端报告 truecolor 时才用固定色；256 色或 16 色终端会自动退回主题 token，不会输出显示不了的转义序列。模型名、`+N`/`−N`、上下文、缓存、生成速度都加了粗体。
 
 ### 窄屏
 
@@ -59,6 +72,7 @@ pi install git:github.com/<you>/pi-statusline
     "separator": " · ",
     "modelNames": { "vendor/chat-model": "chat model" },
     "icons": "nerd",
+    "palette": "auto",
     "showStatuses": true,
     "tickMs": 1000,
     "gitTtlMs": 5000
@@ -72,6 +86,7 @@ pi install git:github.com/<you>/pi-statusline
 | `separator` | `" · "` | 段之间的分隔符 |
 | `modelNames` | `{}` | 模型显示名覆盖，可用完整 id 或最后一段 |
 | `icons` | `"nerd"` | `"nerd"`（Nerd Font 字形）/ `"emoji"` / `"none"` |
+| `palette` | `"auto"` | `"auto"` / `"theme"` / `"gruvbox"` / `"gruvbox-light"` |
 | `showStatuses` | `true` | 是否追加其它扩展的状态 |
 | `tickMs` | `1000` | 时长段的刷新间隔 |
 | `gitTtlMs` | `5000` | git 快照有效期，过期后台刷新 |

@@ -15,6 +15,7 @@ import { type StatuslineConfig, loadConfig } from "./src/config.ts";
 import { ContextCache } from "./src/context.ts";
 import { DiffStats } from "./src/git.ts";
 import { iconsFor } from "./src/icons.ts";
+import { type Palette, paintRgb, resolvePalette } from "./src/palette.ts";
 import { renderSegments } from "./src/render.ts";
 import { type SegmentInput, buildSegments } from "./src/segments.ts";
 import { TpsMeter } from "./src/tps.ts";
@@ -25,6 +26,8 @@ import { SessionUsageCache, sessionStartMs } from "./src/usage.ts";
 interface ThemeLike {
 	fg(color: string, text: string): string;
 	bold(text: string): string;
+	appearance?: string;
+	getColorMode?(): string;
 }
 
 interface FooterDataLike {
@@ -66,7 +69,8 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		});
 	}
 
-	function colorize(part: Part, theme: ThemeLike): string {
+	function colorize(part: Part, theme: ThemeLike, palette: Palette): string {
+		if (palette.source === "rgb") return paintRgb(part.text, palette.colors[part.role], part.bold === true);
 		const text = theme.fg(part.role, part.text);
 		return part.bold ? theme.bold(text) : text;
 	}
@@ -87,6 +91,11 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		const stats = diff.get(current.cwd);
 		const context = contextCache.get(current);
 		const usage = usageCache.get(current);
+		const palette = resolvePalette(
+			config.palette,
+			theme.appearance ?? "dark",
+			theme.getColorMode?.() ?? "truecolor",
+		);
 		const input: SegmentInput = {
 			cwd: current.cwd,
 			modelId: current.model?.id,
@@ -113,7 +122,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		return renderSegments(segments, {
 			width,
 			separator: config.separator,
-			colorize: (part) => colorize(part, theme),
+			colorize: (part) => colorize(part, theme, palette),
 			visibleWidth,
 			truncate: (text, limit) => truncateToWidth(text, limit),
 		});

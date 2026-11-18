@@ -42,9 +42,8 @@ back to pi's built-in one.
 | Duration | ` 1h2m` | first session entry timestamp → now |
 | Statuses | `2 jobs` | `ctx.ui.setStatus()` from other extensions |
 
-Colors follow the pi theme (no hardcoded palette): the model name is `accent` and bold,
-values are `text`, icons and labels are `muted`/`dim`, `+N` is `success`, `−N` is `error`,
-and context/cache shift to `warning` and `error` as they get worse.
+Colors follow a Gruvbox palette chosen by your terminal's appearance, or pi's own theme
+tokens if you prefer (`palette: "theme"`). See [Colors](#colors).
 
 ### How the numbers are defined
 
@@ -64,6 +63,23 @@ and context/cache shift to `warning` and `error` as they get worse.
   totals, and cost. `38k tok` next to `18%/1M` reads as duplicated information, and the
   cost is available from `/session`.
 
+### Colors
+
+pi's `system` theme derives its palette from the terminal and desaturates it for
+contrast, which turns a status line of `text`/`muted`/`dim` segments into one grey line —
+especially on a light terminal. So the status line paints itself:
+
+| `palette` | Behavior |
+|---|---|
+| `auto` (default) | Gruvbox Dark on dark terminals, Gruvbox Light on light ones, picked from the theme's `appearance` |
+| `theme` | pi's own semantic tokens: adapts to any theme, but low chroma |
+| `gruvbox` | Always the dark palette |
+| `gruvbox-light` | Always the light palette |
+
+Fixed colors are only used when the terminal reports truecolor support; on a 256 or
+16-color terminal the extension falls back to theme tokens rather than emitting escapes
+the terminal cannot show. Bold marks the model, `+N`/`−N`, context, cache and throughput.
+
 ### Width
 
 Segments marked optional (git counts, throughput, duration, statuses) are dropped from the
@@ -82,6 +98,7 @@ Everything is optional and lives next to your pi settings, in
     "separator": " · ",
     "modelNames": { "vendor/chat-model": "chat model" },
     "icons": "nerd",
+    "palette": "auto",
     "showStatuses": true,
     "tickMs": 1000,
     "gitTtlMs": 5000
@@ -95,6 +112,7 @@ Everything is optional and lives next to your pi settings, in
 | `separator` | `" · "` | Text between segments |
 | `modelNames` | `{}` | Display-name overrides, keyed by full model id or its last path segment |
 | `icons` | `"nerd"` | `"nerd"` (Nerd Font glyphs), `"emoji"`, or `"none"` |
+| `palette` | `"auto"` | `"auto"`, `"theme"`, `"gruvbox"`, or `"gruvbox-light"` |
 | `showStatuses` | `true` | Append statuses published by other extensions |
 | `tickMs` | `1000` | How often the elapsed-time segment redraws |
 | `gitTtlMs` | `5000` | How long a git snapshot stays fresh before a background refresh |
@@ -118,6 +136,7 @@ node --test tests/*.test.ts
 | `src/render.ts` | Width-aware joining: drop optional segments, then truncate |
 | `src/format.ts` | Tokens, duration, percentage, model-name formatting |
 | `src/icons.ts` | Nerd Font / emoji / plain glyph sets |
+| `src/palette.ts` | Gruvbox palettes, appearance- and capability-aware |
 | `src/tps.ts` | Throughput meter over the message stream |
 | `src/usage.ts` | Session token/cost totals and cache hit rate |
 | `src/git.ts` | Cached `git diff HEAD --shortstat` reads (`--no-optional-locks`) |

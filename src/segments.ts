@@ -74,8 +74,8 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			case "git": {
 				if (!input.branch || !input.repo) break;
 				const parts = withIcon(icons.git, { text: input.branch, role: "muted" });
-				if (input.insertions > 0) parts.push({ text: ` +${input.insertions}`, role: "success" });
-				if (input.deletions > 0) parts.push({ text: ` −${input.deletions}`, role: "error" });
+				if (input.insertions > 0) parts.push({ text: ` +${input.insertions}`, role: "success", bold: true });
+				if (input.deletions > 0) parts.push({ text: ` −${input.deletions}`, role: "error", bold: true });
 				push("git", parts, true);
 				break;
 			}
@@ -84,18 +84,21 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				const percent = input.contextPercent;
 				const role = contextRole(percent);
 				const text = `${fmtPercent(percent)}/${fmtTokensShort(input.contextWindow)}`;
-				push("context", withIcon(contextGauge(icons, percent), { text, role }, role));
+				push("context", withIcon(contextGauge(icons, percent), { text, role, bold: true }, role));
 				break;
 			}
 			case "cache": {
 				if (input.cacheHitRate === null) break;
-				push("cache", withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate) }));
+				push(
+					"cache",
+					withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate), bold: true }),
+				);
 				break;
 			}
 			case "tps": {
 				const text = fmtTps(input.tokensPerSecond);
 				if (!text) break;
-				push("tps", [{ text, role: "text" }], true);
+				push("tps", [{ text, role: "text", bold: true }], true);
 				break;
 			}
 			case "duration": {
