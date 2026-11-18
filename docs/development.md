@@ -46,6 +46,20 @@ is why the tests need no pi installation and no mocks.
 5. Add a row to the table in `docs/configuration.md` and to the README if it is a headline
    feature.
 
+## The README preview
+
+`assets/preview.png` is generated from the extension itself, not drawn by hand:
+
+```sh
+node scripts/preview.mjs        # prints an HTML file to screenshot
+```
+
+The script runs the real `buildSegments` → `renderSegments` → `palette` pipeline and turns
+the resulting ANSI into HTML, so the picture follows the code. It has to be screenshotted
+in a browser: the local SVG rasterisers (rsvg-convert, QuickLook) fall back to LastResort
+for Nerd Font codepoints and draw boxes. Regenerate it whenever the line's layout or colors
+change, and keep the resulting file at 1260×112.
+
 ## Testing conventions
 
 - Palette values are pinned by a test to the hexes sampled from the original Claude Code
