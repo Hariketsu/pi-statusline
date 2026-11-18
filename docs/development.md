@@ -58,9 +58,9 @@ is why the tests need no pi installation and no mocks.
 
 ## Publishing
 
-The npm name `pi-statusline` is taken by an unrelated, dormant package, so publishing means a
-scope: `@<npm-user>/pi-statusline`. The git repository is the distribution channel until then,
-and stays a valid one afterwards.
+The npm name `pi-statusline` is taken by an unrelated, dormant package, so the package is
+published as `@hariketsu/pi-statusline`. The git repository is the distribution channel until
+then, and stays a valid one afterwards.
 
 See [publishing.md](./publishing.md) for the package contents, the gallery, versioning and the
 pre-publish checklist.

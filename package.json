@@ -1,5 +1,5 @@
 {
-	"name": "pi-statusline",
+	"name": "@hariketsu/pi-statusline",
 	"version": "0.1.0",
 	"description": "A compact, theme-aware status line for the pi coding agent",
 	"author": "Hariketsu",
@@ -44,5 +44,8 @@
 	"scripts": {
 		"test": "node --test tests/*.test.ts",
 		"typecheck": "tsc --noEmit"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

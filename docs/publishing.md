@@ -18,18 +18,18 @@ name being available.
 
 ## npm
 
-The unscoped name `pi-statusline` is taken by an unrelated, dormant package. Publish under a
-scope instead:
+The unscoped name `pi-statusline` is taken by an unrelated, dormant package, so the package is
+scoped: `@hariketsu/pi-statusline`. The scope must match the npm account that publishes it —
+if the account is not named `hariketsu`, rename the package to `@<account>/pi-statusline`
+first, otherwise npm rejects the publish with a 403.
 
-```json
-{ "name": "@hariketsu/pi-statusline" }
-```
-
-Then, once, with an npm account and a login:
+`publishConfig.access` is already `public` in `package.json`, which scoped packages otherwise
+default away from. Publishing therefore needs only a login:
 
 ```sh
 npm login
-npm publish --access public      # scoped packages default to private otherwise
+npm whoami                       # confirm the account matches the scope
+npm publish
 ```
 
 `files` in `package.json` already restricts the tarball to `index.ts`, `src/`, `docs/` and the
@@ -75,8 +75,8 @@ Until the public interface settles (settings keys and segment ids are the interf
 
 ```sh
 node --test tests/*.test.ts     # green
-npm pack --dry-run              # only the intended files
+npm publish --dry-run           # 20 files, public access, no auth needed
 gh repo edit --visibility public
 git push -u origin main
-npm publish --access public
+npm publish
 ```
