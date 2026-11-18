@@ -36,14 +36,19 @@ back to pi's built-in one.
 | Thinking | `󰧑 max` | `ctx.thinkingLevel` (hidden when `off`) |
 | Directory | `pi-statusline` | basename of `ctx.cwd` |
 | Git | ` feat/x +12 −3` | `footerData.getGitBranch()` + `git diff HEAD --shortstat` |
+| Diff | `+12 −3` | working tree against HEAD, green additions, red deletions |
 | Context | `󰡳 15%/1M` | `ctx.getContextUsage()`, gauge glyph and color by usage |
 | Cache | `⚡87%` | prompt cache hit rate of the latest assistant message |
 | Throughput | `42.4t/s` | output tokens over the generation window of the last turn |
 | Duration | ` 1h2m` | first session entry timestamp → now |
 | Statuses | `2 jobs` | `ctx.ui.setStatus()` from other extensions |
 
-Colors follow a Gruvbox palette chosen by your terminal's appearance, or pi's own theme
-tokens if you prefer (`palette: "theme"`). See [Colors](#colors).
+Colors are blocks, not just text: the model, directory, branch, diff and context are
+painted as Gruvbox chips (light or dark, picked from the terminal's appearance), while
+quiet facts — thinking level, cache rate, throughput, elapsed time, other extensions'
+statuses — stay plain colored text so the line keeps a hierarchy instead of a row of
+equal blocks. `style: "text"` drops the backgrounds, `style: "theme"` follows pi's own
+tokens. See [Colors](#colors).
 
 ### How the numbers are defined
 
@@ -69,12 +74,17 @@ pi's `system` theme derives its palette from the terminal and desaturates it for
 contrast, which turns a status line of `text`/`muted`/`dim` segments into one grey line —
 especially on a light terminal. So the status line paints itself:
 
-| `palette` | Behavior |
+| `style` | Behavior |
 |---|---|
-| `auto` (default) | Gruvbox Dark on dark terminals, Gruvbox Light on light ones, picked from the theme's `appearance` |
+| `chips` (default) | Colored blocks on Gruvbox Dark or Light, picked from the theme's `appearance` |
+| `text` | The same palette as foreground colors, no backgrounds |
 | `theme` | pi's own semantic tokens: adapts to any theme, but low chroma |
-| `gruvbox` | Always the dark palette |
-| `gruvbox-light` | Always the light palette |
+
+This mirrors what the established packages do: `pi-powerline-footer` hardcodes identity
+colors (`model: "#d787af"`, `path: "#00afaf"`) and only maps state to theme tokens, and
+`pi-airline` paints with the terminal's own ANSI palette. pi's `system` theme desaturates
+its colors for contrast, which is why a status line built purely from theme tokens ends
+up monochrome on a light terminal.
 
 Fixed colors are only used when the terminal reports truecolor support; on a 256 or
 16-color terminal the extension falls back to theme tokens rather than emitting escapes
@@ -94,11 +104,11 @@ Everything is optional and lives next to your pi settings, in
 ```json
 {
   "statusline": {
-    "segments": ["model", "thinking", "dir", "git", "context", "cache", "tps", "duration", "statuses"],
+    "segments": ["model", "thinking", "dir", "git", "diff", "context", "cache", "tps", "duration", "statuses"],
     "separator": " · ",
     "modelNames": { "vendor/chat-model": "chat model" },
     "icons": "nerd",
-    "palette": "auto",
+    "style": "chips",
     "showStatuses": true,
     "tickMs": 1000,
     "gitTtlMs": 5000
@@ -109,10 +119,10 @@ Everything is optional and lives next to your pi settings, in
 | Key | Default | Meaning |
 |---|---|---|
 | `segments` | all, in the order above | Which segments to show, and in what order |
-| `separator` | `" · "` | Text between segments |
+| `separator` | `" "` for chips, `" · "` otherwise | Text between segments |
 | `modelNames` | `{}` | Display-name overrides, keyed by full model id or its last path segment |
 | `icons` | `"nerd"` | `"nerd"` (Nerd Font glyphs), `"emoji"`, or `"none"` |
-| `palette` | `"auto"` | `"auto"`, `"theme"`, `"gruvbox"`, or `"gruvbox-light"` |
+| `style` | `"chips"` | `"chips"` (blocks), `"text"` (foreground only), or `"theme"` (pi tokens) |
 | `showStatuses` | `true` | Append statuses published by other extensions |
 | `tickMs` | `1000` | How often the elapsed-time segment redraws |
 | `gitTtlMs` | `5000` | How long a git snapshot stays fresh before a background refresh |

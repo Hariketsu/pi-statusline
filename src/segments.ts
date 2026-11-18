@@ -36,6 +36,7 @@ const DEFAULT_ORDER: SegmentId[] = [
 	"thinking",
 	"dir",
 	"git",
+	"diff",
 	"context",
 	"cache",
 	"tps",
@@ -48,11 +49,9 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 	const icons = options.icons ?? iconsFor("nerd");
 	const segments: Segment[] = [];
 
-	const push = (id: SegmentId, parts: Part[], optional = false) => {
-		const visible = parts.filter((part) => part.text.length > 0);
-		if (visible.length === 0) return;
-		if (!visible.some((part) => part.text.trim().length > 0)) return;
-		segments.push({ id, parts: visible, optional });
+	const push = (id: SegmentId, parts: Part[], optional = false, chip = true) => {
+		if (!parts.some((part) => part.text.trim().length > 0)) return;
+		segments.push({ id, parts: parts.filter((part) => part.text.length > 0), optional, chip });
 	};
 
 	for (const id of order) {
@@ -65,18 +64,23 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			case "thinking": {
 				const level = input.thinkingLevel;
 				if (!level || level === "off") break;
-				push("thinking", withIcon(icons.thinking, { text: level, role: "text" }));
+				push("thinking", withIcon(icons.thinking, { text: level, role: "muted" }), false, false);
 				break;
 			}
 			case "dir":
-				push("dir", [{ text: basename(input.cwd), role: "text" }]);
+				push("dir", [{ text: basename(input.cwd), role: "path" }]);
 				break;
 			case "git": {
 				if (!input.branch || !input.repo) break;
-				const parts = withIcon(icons.git, { text: input.branch, role: "muted" });
-				if (input.insertions > 0) parts.push({ text: ` +${input.insertions}`, role: "success", bold: true });
-				if (input.deletions > 0) parts.push({ text: ` −${input.deletions}`, role: "error", bold: true });
-				push("git", parts, true);
+				push("git", withIcon(icons.git, { text: input.branch, role: "vcs" }), true);
+				break;
+			}
+			case "diff": {
+				if (!input.repo || (input.insertions === 0 && input.deletions === 0)) break;
+				const parts: Part[] = [];
+				if (input.insertions > 0) parts.push({ text: `+${input.insertions}`, role: "success", bold: true });
+				if (input.deletions > 0) parts.push({ text: `−${input.deletions}`, role: "error", bold: true });
+				push("diff", parts, true);
 				break;
 			}
 			case "context": {
@@ -84,7 +88,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				const percent = input.contextPercent;
 				const role = contextRole(percent);
 				const text = `${fmtPercent(percent)}/${fmtTokensShort(input.contextWindow)}`;
-				push("context", withIcon(contextGauge(icons, percent), { text, role, bold: true }, role));
+				push("context", withIcon(contextGauge(icons, percent), { text, role, bold: true }));
 				break;
 			}
 			case "cache": {
@@ -92,24 +96,25 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				push(
 					"cache",
 					withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate), bold: true }),
+					false,
+					false,
 				);
 				break;
 			}
 			case "tps": {
 				const text = fmtTps(input.tokensPerSecond);
-				if (!text) break;
-				push("tps", [{ text, role: "text", bold: true }], true);
+				if (text) push("tps", withIcon(icons.tps, { text, role: "speed", bold: true }), true, false);
 				break;
 			}
 			case "duration": {
 				if (input.durationMs === null) break;
-				push("duration", withIcon(icons.duration, { text: fmtDuration(input.durationMs), role: "dim" }), true);
+				push("duration", withIcon(icons.duration, { text: fmtDuration(input.durationMs), role: "muted" }), true, false);
 				break;
 			}
 			case "statuses": {
 				if (options.showStatuses === false || input.statuses.size === 0) break;
 				const text = [...input.statuses.values()].filter(Boolean).join(" · ");
-				if (text) push("statuses", [{ text, role: "muted" }], true);
+				if (text) push("statuses", [{ text, role: "muted" }], true, false);
 				break;
 			}
 		}
@@ -118,21 +123,21 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 	return segments;
 }
 
-/** Prefixes a dim icon and a space when the icon set has one. */
-function withIcon(icon: string, part: Part, iconRole: Role = "muted"): Part[] {
+/** The icon takes the value's role, so both land in one chip (or one colored run). */
+function withIcon(icon: string, part: Part): Part[] {
 	if (!icon) return [{ ...part }];
-	return [{ text: icon, role: iconRole }, { text: " ", role: iconRole }, { ...part }];
+	return [{ text: icon, role: part.role }, { text: " ", role: part.role }, { ...part }];
 }
 
 function contextRole(percent: number): Role {
 	if (percent > 90) return "error";
 	if (percent > 70) return "warning";
-	return "text";
+	return "success";
 }
 
 function cacheRole(percent: number): Role {
 	if (percent >= 80) return "success";
-	if (percent >= 50) return "text";
+	if (percent >= 50) return "muted";
 	return "warning";
 }
 

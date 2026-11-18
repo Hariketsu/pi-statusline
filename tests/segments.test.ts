@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { iconsFor } from "../src/icons.ts";
-import { renderSegments } from "../src/render.ts";
+import { groupRuns, renderSegments } from "../src/render.ts";
 import { type SegmentInput, buildSegments } from "../src/segments.ts";
 
 function baseInput(overrides: Partial<SegmentInput> = {}): SegmentInput {
@@ -14,11 +14,11 @@ function baseInput(overrides: Partial<SegmentInput> = {}): SegmentInput {
 		repo: true,
 		insertions: 12,
 		deletions: 3,
-		contextPercent: 15,
+		contextPercent: 23,
 		contextWindow: 1_000_000,
-		cacheHitRate: 87,
+		cacheHitRate: 100,
 		tokensPerSecond: 42.4,
-		durationMs: 3_720_000,
+		durationMs: 5_160_000,
 		statuses: new Map(),
 		...overrides,
 	};
@@ -26,66 +26,70 @@ function baseInput(overrides: Partial<SegmentInput> = {}): SegmentInput {
 
 const plan = { icons: iconsFor("none") };
 
-/** `id:text` per segment, whitespace collapsed, for readable assertions. */
+/** `id:text` per segment, for readable assertions. */
 const texts = (input: SegmentInput, options = {}) =>
 	buildSegments(input, { ...plan, ...options }).map(
 		(segment) => `${segment.id}:${segment.parts.map((part) => part.text).join("").trim()}`,
 	);
+
+const roleOf = (segmentId: string, input: SegmentInput, options = {}) =>
+	buildSegments(input, { ...plan, ...options }).find((s) => s.id === segmentId)?.parts.at(-1)?.role;
 
 test("builds one segment per available fact, in the default order", () => {
 	assert.deepEqual(texts(baseInput()), [
 		"model:chat-model",
 		"thinking:max",
 		"dir:pi-statusline",
-		"git:feat/pi-statusline-plugin +12 −3",
-		"context:15%/1M",
-		"cache:87%",
+		"git:feat/pi-statusline-plugin",
+		"diff:+12−3",
+		"context:23%/1M",
+		"cache:100%",
 		"tps:42.4t/s",
-		"duration:1h2m",
+		"duration:1h26m",
 	]);
 });
 
-test("nerd icons prefix the value but stay out of the number", () => {
-	const segments = buildSegments(baseInput(), { icons: iconsFor("nerd") });
-	const byId = new Map(segments.map((s) => [s.id, s.parts.map((p) => p.text).join("")]));
-	assert.equal(byId.get("thinking"), "\u{F09D1} max");
-	assert.equal(byId.get("git"), "\u{F418} feat/pi-statusline-plugin +12 −3");
-	assert.ok(byId.get("context")?.startsWith("\u{F0873}"));
-	assert.equal(byId.get("cache"), "\u{F0E7} 87%");
-	assert.equal(byId.get("duration"), "\u{F0150} 1h2m");
+test("identity segments carry distinct roles, not just text", () => {
+	assert.equal(roleOf("model", baseInput()), "accent");
+	assert.equal(roleOf("dir", baseInput()), "path");
+	assert.equal(roleOf("git", baseInput()), "vcs");
+	assert.equal(roleOf("tps", baseInput()), "speed");
 });
 
-test("git counts are colored independently from the branch", () => {
-	const parts = buildSegments(baseInput(), plan).find((s) => s.id === "git")?.parts ?? [];
+test("diff splits into green additions and red deletions", () => {
+	const parts = buildSegments(baseInput(), plan).find((s) => s.id === "diff")?.parts ?? [];
 	assert.deepEqual(
-		parts.map((part) => [part.text, part.role]),
+		parts.map((part) => [part.text, part.role, part.bold === true]),
 		[
-			["feat/pi-statusline-plugin", "muted"],
-			[" +12", "success"],
-			[" −3", "error"],
+			["+12", "success", true],
+			["−3", "error", true],
 		],
 	);
 });
 
-test("a clean tree shows the branch without counts", () => {
-	assert.ok(texts(baseInput({ insertions: 0, deletions: 0 })).includes("git:feat/pi-statusline-plugin"));
+test("an icon shares its value's role so both paint as one block", () => {
+	const segments = buildSegments(baseInput(), { icons: iconsFor("nerd") });
+	const context = segments.find((s) => s.id === "context");
+	assert.ok(context);
+	assert.equal(new Set(context.parts.map((part) => part.role)).size, 1);
+	assert.equal(groupRuns(context.parts).length, 1);
+	assert.ok(context.parts[0].text.startsWith("\u{F0873}") || context.parts[0].text.startsWith("\u{F0875}"));
 });
 
-test("outside a repository the git segment disappears", () => {
+test("git and diff disappear when there is nothing to show", () => {
+	assert.ok(!texts(baseInput({ insertions: 0, deletions: 0 })).some((s) => s.startsWith("diff:")));
+	assert.ok(texts(baseInput({ insertions: 0, deletions: 0 })).includes("git:feat/pi-statusline-plugin"));
 	assert.ok(!texts(baseInput({ branch: null, repo: false })).some((s) => s.startsWith("git:")));
 });
 
 test("context and cache colors follow their tiers", () => {
-	const role = (id: "context" | "cache", overrides: Partial<SegmentInput>) =>
-		buildSegments(baseInput(overrides), plan).find((s) => s.id === id)?.parts.at(-1)?.role;
+	assert.equal(roleOf("context", baseInput({ contextPercent: 40 })), "success");
+	assert.equal(roleOf("context", baseInput({ contextPercent: 75 })), "warning");
+	assert.equal(roleOf("context", baseInput({ contextPercent: 95 })), "error");
 
-	assert.equal(role("context", { contextPercent: 69 }), "text");
-	assert.equal(role("context", { contextPercent: 71 }), "warning");
-	assert.equal(role("context", { contextPercent: 91 }), "error");
-
-	assert.equal(role("cache", { cacheHitRate: 95 }), "success");
-	assert.equal(role("cache", { cacheHitRate: 60 }), "text");
-	assert.equal(role("cache", { cacheHitRate: 20 }), "warning");
+	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 95 })), "success");
+	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 60 })), "muted");
+	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 20 })), "warning");
 });
 
 test("missing data drops its segment instead of printing a placeholder", () => {
@@ -110,27 +114,24 @@ test("a custom segment order is respected", () => {
 test("rendering drops optional segments before truncating", () => {
 	const segments = buildSegments(baseInput({ statuses: new Map([["x", "working"]]) }), plan);
 	const line = renderSegments(segments, {
-		width: 42,
-		separator: " · ",
-		colorize: (part) => part.text,
+		width: 40,
+		separator: " ",
+		paint: (parts) => parts.map((part) => part.text).join(""),
 		visibleWidth: (text) => text.length,
 		truncate: (text, limit) => text.slice(0, limit),
 	});
-	assert.ok(line.length <= 42);
+	assert.ok(line.length <= 40);
 	assert.ok(line.startsWith("chat-model"));
 	assert.ok(!line.includes("working"), "the optional statuses segment goes first");
 });
 
-test("a line that fits keeps every segment, including separators", () => {
+test("a line that fits keeps every segment", () => {
 	const line = renderSegments(buildSegments(baseInput(), plan), {
 		width: 200,
-		separator: " · ",
-		colorize: (part) => part.text,
+		separator: " ",
+		paint: (parts) => parts.map((part) => part.text).join(""),
 		visibleWidth: (text) => text.length,
 		truncate: (text, limit) => text.slice(0, limit),
 	});
-	assert.equal(
-		line,
-		"chat-model · max · pi-statusline · feat/pi-statusline-plugin +12 −3 · 15%/1M · 87% · 42.4t/s · 1h2m",
-	);
+	assert.equal(line, "chat-model max pi-statusline feat/pi-statusline-plugin +12 −3 23%/1M 100% 42.4t/s 1h26m");
 });

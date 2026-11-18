@@ -28,13 +28,14 @@ pi install git:github.com/<you>/pi-statusline
 | 思考等级 | `󰧑 max` | `ctx.thinkingLevel`（`off` 时隐藏） |
 | 目录 | `pi-statusline` | `ctx.cwd` 的 basename |
 | Git | ` feat/x +12 −3` | `footerData.getGitBranch()` + `git diff HEAD --shortstat` |
+| 差异 | `+12 −3` | 工作区对 HEAD 的增删行，绿加红减 |
 | 上下文 | `󰡳 15%/1M` | `ctx.getContextUsage()`，图标与颜色随占用率变化 |
 | 缓存 | `⚡87%` | 最近一条 assistant 消息的 prompt 缓存命中率 |
 | 生成速度 | `42.4t/s` | 上一轮输出 token ÷ 生成窗口 |
 | 时长 | ` 1h2m` | 首个会话条目的时间戳 → 现在 |
 | 状态 | `2 jobs` | 其它扩展的 `ctx.ui.setStatus()` |
 
-颜色默认按终端明暗选 Gruvbox 调色板（浅色终端用 Gruvbox Light），也可以切回 pi 主题 token（`palette: "theme"`），见下文「颜色」。
+颜色默认是**色块**：模型、目录、分支、增删、上下文各占一块 Gruvbox 底色（按终端明暗自动选 Light/Dark）；思考等级、缓存率、生成速度、时长、其它扩展状态这些「安静信息」用彩色文字，不再套背景块——这样一行里有主次，而不是一排等重的方块。`style: "text"` 去掉背景，`style: "theme"` 走 pi 自己的 token。
 
 ### 数字的口径
 
@@ -48,12 +49,13 @@ pi install git:github.com/<you>/pi-statusline
 
 pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`/`muted`/`dim` 三档几乎糊成一条灰线。所以状态栏自己上色：
 
-| `palette` | 行为 |
+| `style` | 行为 |
 |---|---|
-| `auto`（默认） | 深色终端用 Gruvbox Dark，浅色终端用 Gruvbox Light，依据主题的 `appearance` |
-| `theme` | 用 pi 自己的语义 token：任何主题都适配，但饱和度低 |
-| `gruvbox` | 固定深色 |
-| `gruvbox-light` | 固定浅色 |
+| `chips`（默认） | 按终端明暗选 Gruvbox Dark / Light，画成背景色块 |
+| `text` | 同一套颜色只做前景色，不画背景 |
+| `theme` | 走 pi 自己的语义 token：任何主题都适配，但饱和度低 |
+
+这也是同行的做法：`pi-powerline-footer` 把身份色写死（`model: "#d787af"`、`path: "#00afaf"`），只有状态色才映射主题 token；`pi-airline` 直接用终端 ANSI 调色板。pi 的 `system` 主题为了对比度会压饱和度，纯主题 token 在浅色终端上必然糊成灰线。
 
 只有在终端报告 truecolor 时才用固定色；256 色或 16 色终端会自动退回主题 token，不会输出显示不了的转义序列。模型名、`+N`/`−N`、上下文、缓存、生成速度都加了粗体。
 
@@ -68,11 +70,11 @@ pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`
 ```json
 {
   "statusline": {
-    "segments": ["model", "thinking", "dir", "git", "context", "cache", "tps", "duration", "statuses"],
+    "segments": ["model", "thinking", "dir", "git", "diff", "context", "cache", "tps", "duration", "statuses"],
     "separator": " · ",
     "modelNames": { "vendor/chat-model": "chat model" },
     "icons": "nerd",
-    "palette": "auto",
+    "style": "chips",
     "showStatuses": true,
     "tickMs": 1000,
     "gitTtlMs": 5000
@@ -83,10 +85,10 @@ pi 的 `system` 主题会按终端明暗压饱和度保对比度，结果 `text`
 | 键 | 默认 | 含义 |
 |---|---|---|
 | `segments` | 全部，按上表顺序 | 显示哪些段、以什么顺序 |
-| `separator` | `" · "` | 段之间的分隔符 |
+| `separator` | chips 默认 `" "`，其余 `" · "` | 段之间的分隔符 |
 | `modelNames` | `{}` | 模型显示名覆盖，可用完整 id 或最后一段 |
 | `icons` | `"nerd"` | `"nerd"`（Nerd Font 字形）/ `"emoji"` / `"none"` |
-| `palette` | `"auto"` | `"auto"` / `"theme"` / `"gruvbox"` / `"gruvbox-light"` |
+| `style` | `"chips"` | `"chips"`（色块）/ `"text"`（只上色）/ `"theme"`（pi 主题 token） |
 | `showStatuses` | `true` | 是否追加其它扩展的状态 |
 | `tickMs` | `1000` | 时长段的刷新间隔 |
 | `gitTtlMs` | `5000` | git 快照有效期，过期后台刷新 |

@@ -15,7 +15,7 @@ import { type StatuslineConfig, loadConfig } from "./src/config.ts";
 import { ContextCache } from "./src/context.ts";
 import { DiffStats } from "./src/git.ts";
 import { iconsFor } from "./src/icons.ts";
-import { type Palette, paintRgb, resolvePalette } from "./src/palette.ts";
+import { paintChip, paintColor, resolveStyle } from "./src/palette.ts";
 import { renderSegments } from "./src/render.ts";
 import { type SegmentInput, buildSegments } from "./src/segments.ts";
 import { TpsMeter } from "./src/tps.ts";
@@ -69,10 +69,17 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		});
 	}
 
-	function colorize(part: Part, theme: ThemeLike, palette: Palette): string {
-		if (palette.source === "rgb") return paintRgb(part.text, palette.colors[part.role], part.bold === true);
-		const text = theme.fg(part.role, part.text);
-		return part.bold ? theme.bold(text) : text;
+	function paint(parts: Part[], chip: boolean, theme: ThemeLike, style: ReturnType<typeof resolveStyle>): string {
+		if (style.kind === "chips") {
+			return chip ? paintChip(parts, style.chips[parts[0].role]) : paintColor(parts, style.colors[parts[0].role]);
+		}
+		if (style.kind === "text") return paintColor(parts, style.colors[parts[0].role]);
+		return parts
+			.map((part) => {
+				const text = theme.fg(part.role, part.text);
+				return part.bold ? theme.bold(text) : text;
+			})
+			.join("");
 	}
 
 	function buildLine(width: number, theme: ThemeLike, footerData: FooterDataLike): string {
@@ -91,11 +98,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		const stats = diff.get(current.cwd);
 		const context = contextCache.get(current);
 		const usage = usageCache.get(current);
-		const palette = resolvePalette(
-			config.palette,
-			theme.appearance ?? "dark",
-			theme.getColorMode?.() ?? "truecolor",
-		);
+		const style = resolveStyle(config.style, theme.appearance ?? "dark", theme.getColorMode?.() ?? "truecolor");
 		const input: SegmentInput = {
 			cwd: current.cwd,
 			modelId: current.model?.id,
@@ -122,7 +125,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		return renderSegments(segments, {
 			width,
 			separator: config.separator,
-			colorize: (part) => colorize(part, theme, palette),
+			paint: (parts, chip) => paint(parts, chip, theme, style),
 			visibleWidth,
 			truncate: (text, limit) => truncateToWidth(text, limit),
 		});

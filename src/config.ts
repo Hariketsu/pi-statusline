@@ -10,7 +10,7 @@
  */
 
 import type { IconSet } from "./icons.ts";
-import type { PaletteMode } from "./palette.ts";
+import { type Style, defaultSeparator } from "./palette.ts";
 import type { SegmentId } from "./types.ts";
 
 export interface StatuslineConfig {
@@ -20,7 +20,7 @@ export interface StatuslineConfig {
 	modelNames: Record<string, string>;
 	showStatuses: boolean;
 	icons: IconSet;
-	palette: PaletteMode;
+	style: Style;
 	/** How often the elapsed-time segment redraws. */
 	tickMs: number;
 	/** How long a git snapshot stays fresh. */
@@ -32,6 +32,7 @@ export const KNOWN_SEGMENTS: SegmentId[] = [
 	"thinking",
 	"dir",
 	"git",
+	"diff",
 	"context",
 	"cache",
 	"tps",
@@ -46,7 +47,7 @@ export const DEFAULTS: StatuslineConfig = {
 	modelNames: {},
 	showStatuses: true,
 	icons: "nerd",
-	palette: "auto",
+	style: "chips",
 	tickMs: 1000,
 	gitTtlMs: 5000,
 };
@@ -54,17 +55,18 @@ export const DEFAULTS: StatuslineConfig = {
 export function loadConfig(pi: { getSettings?: () => unknown }): StatuslineConfig {
 	const settings = safeCall(pi);
 	const raw = settings?.statusline;
-	if (!raw || typeof raw !== "object") return { ...DEFAULTS };
+	if (!raw || typeof raw !== "object") return { ...DEFAULTS, separator: defaultSeparator(DEFAULTS.style) };
 	const value = raw as Record<string, unknown>;
 
+	const style = parseStyle(value.style);
 	return {
 		enabled: typeof value.enabled === "boolean" ? value.enabled : DEFAULTS.enabled,
 		segments: parseSegments(value.segments) ?? DEFAULTS.segments,
-		separator: typeof value.separator === "string" ? value.separator : DEFAULTS.separator,
+		separator: typeof value.separator === "string" ? value.separator : defaultSeparator(style),
 		modelNames: parseModelNames(value.modelNames),
 		showStatuses: typeof value.showStatuses === "boolean" ? value.showStatuses : DEFAULTS.showStatuses,
 		icons: parseIcons(value.icons),
-		palette: parsePalette(value.palette),
+		style,
 		tickMs: clampMs(value.tickMs, DEFAULTS.tickMs, 250, 10_000),
 		gitTtlMs: clampMs(value.gitTtlMs, DEFAULTS.gitTtlMs, 500, 60_000),
 	};
@@ -103,10 +105,8 @@ function parseIcons(value: unknown): IconSet {
 	return value === "emoji" || value === "none" || value === "nerd" ? value : DEFAULTS.icons;
 }
 
-function parsePalette(value: unknown): PaletteMode {
-	return value === "theme" || value === "gruvbox" || value === "gruvbox-light" || value === "auto"
-		? value
-		: DEFAULTS.palette;
+function parseStyle(value: unknown): Style {
+	return value === "chips" || value === "text" || value === "theme" ? value : DEFAULTS.style;
 }
 
 function clampMs(value: unknown, fallback: number, min: number, max: number): number {
