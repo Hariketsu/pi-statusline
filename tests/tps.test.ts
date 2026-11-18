@@ -13,6 +13,7 @@ test("measures throughput between the first and last delta", () => {
 	// 60 tokens over (2600 - 1400) ms = 1.2 s
 	assert.equal(meter.get().tps, 50);
 	assert.equal(meter.get().ttftMs, 400);
+	assert.equal(meter.get().source, "deltas");
 });
 
 test("a single delta reports no rate yet and keeps the previous one", () => {
@@ -29,12 +30,24 @@ test("a single delta reports no rate yet and keeps the previous one", () => {
 	assert.equal(meter.get().tps, 20);
 });
 
-test("without any stream delta the whole message window is used", () => {
+test("without any stream delta the whole message window is used, and marked", () => {
 	const meter = new TpsMeter();
 	meter.start(1000);
 	meter.finish(80, 3000); // no message_update at all
 	assert.equal(meter.get().tps, 40); // 80 tokens over 2s
 	assert.equal(meter.get().ttftMs, null);
+	assert.equal(meter.get().source, "window");
+	assert.equal(meter.estimated, true);
+});
+
+test("generation ends at the last delta, not at message_end", () => {
+	const meter = new TpsMeter();
+	meter.start(0);
+	meter.delta(1000);
+	meter.delta(2000); // 1s of generation
+	meter.finish(60, 5000); // stream teardown takes another 3s
+	assert.equal(meter.get().tps, 60); // 60 tokens over 1s, not 5s
+	assert.equal(meter.get().source, "deltas");
 });
 
 test("without usage the delta count is the fallback", () => {

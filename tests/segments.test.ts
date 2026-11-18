@@ -93,6 +93,13 @@ test("context and cache colors follow their tiers", () => {
 	assert.equal(roleOf("cache", baseInput({ cacheHitRate: 20 })), "warning");
 });
 
+test("an estimated throughput is shown with a tilde", () => {
+	const exact = buildSegments(baseInput(), plan).find((s) => s.id === "tps");
+	assert.equal(exact?.parts.map((part) => part.text).join(""), "42.4t/s");
+	const estimated = buildSegments(baseInput({ tpsEstimated: true }), plan).find((s) => s.id === "tps");
+	assert.equal(estimated?.parts.map((part) => part.text).join(""), "~42.4t/s");
+});
+
 test("missing data drops its segment instead of printing a placeholder", () => {
 	assert.ok(!texts(baseInput({ thinkingLevel: "off" })).some((s) => s.startsWith("thinking:")));
 	assert.ok(!texts(baseInput({ contextPercent: null })).some((s) => s.startsWith("context:")));

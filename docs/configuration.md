@@ -45,7 +45,7 @@ Unknown keys and wrong types are ignored, never fatal.
 | `diff` | Line counts | `+12 −3` | `git diff HEAD --shortstat`; hidden on a clean tree |
 | `context` | Context usage | `󰡳 15%/1M` | Gauge glyph steps at 20/50/85%, color at 70/90% |
 | `cache` | Prompt cache hit rate | ` 38%` | Only appears below 50% |
-| `tps` | Throughput of the last turn | `󰓅 42.4t/s` | Hidden until a turn has been measured |
+| `tps` | Throughput of the last turn | `󰓅 42.4t/s` | Hidden until a turn has been measured; `~` marks an estimate |
 | `duration` | Time since the session started | `󰅐 1h2m` | Redraws every `tickMs` |
 | `statuses` | Other extensions' statuses | `2 jobs` | From `ctx.ui.setStatus()` |
 

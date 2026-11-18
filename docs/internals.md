@@ -57,12 +57,15 @@ stale number.
 message — the same definition pi's built-in footer uses, so the numbers agree. It is a
 per-turn figure: it describes the prompt that was just sent, not the session.
 
-**Throughput** is measured, not estimated: `message_start` opens a window, the first and
-last `message_update` deltas bound the generation, and `message_end` supplies the provider's
-own `usage.output` as the token count. When a host delivers no deltas, the whole
-`message_start → message_end` window is used instead, which includes time to first token and
-is therefore slightly conservative. Stream-driven redraws are throttled to four per second;
-the finish always triggers one.
+**Throughput** is measured over the generation itself: `message_start` opens a window, the
+first and last `message_update` deltas bound it, and `message_end` supplies the provider's
+own `usage.output` as the token count. Generation ends at the last delta, not when
+`message_end` fires — the gap between them is stream teardown, not model time.
+
+When a host delivers no stream updates at all, the whole `message_start → message_end`
+window has to stand in. That window includes time to first token, so it reads low; the
+footer marks such a figure with a leading `~` instead of passing it off as measured.
+Stream-driven redraws are throttled to four per second; the finish always triggers one.
 
 **Line counts** come from `git diff HEAD --shortstat`: staged and unstaged changes against
 `HEAD`, each line counted once, untracked files excluded. Reads use `--no-optional-locks` so

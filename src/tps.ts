@@ -11,6 +11,13 @@
 export interface TpsReading {
 	tps: number | null;
 	ttftMs: number | null;
+	/**
+	 * `deltas` when the rate came from the stream itself (first to last delta),
+	 * `window` when no stream update arrived and the whole message window had to
+	 * stand in. Window figures include time to first token, so they read low and
+	 * are shown with a leading "~".
+	 */
+	source: "deltas" | "window" | null;
 }
 
 export class TpsMeter {
@@ -18,7 +25,7 @@ export class TpsMeter {
 	private firstDeltaAt = 0;
 	private lastDeltaAt = 0;
 	private deltas = 0;
-	private reading: TpsReading = { tps: null, ttftMs: null };
+	private reading: TpsReading = { tps: null, ttftMs: null, source: null };
 
 	/** A new assistant message began. */
 	start(now = Date.now()): void {
@@ -40,6 +47,7 @@ export class TpsMeter {
 			// Before the second delta there is no interval to measure yet.
 			tps: this.deltas > 1 && window > 0 ? this.deltas / window : this.reading.tps,
 			ttftMs,
+			source: this.deltas > 1 && window > 0 ? "deltas" : this.reading.source,
 		};
 		return this.reading;
 	}
@@ -47,18 +55,29 @@ export class TpsMeter {
 	/**
 	 * The message finished: prefer the provider's own output count.
 	 *
-	 * Not every host delivers stream updates to extensions, so when no delta
-	 * arrived the whole `start()`-to-`finish()` window is used instead. That window
-	 * includes time to first token, which makes the figure slightly conservative —
-	 * better than showing nothing.
+	 * Generation ends at the last delta, not when `message_end` fires — the gap
+	 * between them is stream teardown, not model time. Only when the host delivered
+	 * no stream updates at all does the whole message window stand in, and the
+	 * reading is marked `window` so the footer can show it as an estimate.
 	 */
 	finish(outputTokens: number | null, now = Date.now()): TpsReading {
-		const from = this.firstDeltaAt || this.startedAt;
-		const window = (now - from) / 1000;
 		const tokens = outputTokens && outputTokens > 0 ? outputTokens : this.deltas;
-		const tps = from && window > 0 && tokens > 0 ? tokens / window : this.reading.tps;
-		const ttftMs = this.startedAt && this.firstDeltaAt ? this.firstDeltaAt - this.startedAt : this.reading.ttftMs;
-		this.reading = { tps, ttftMs };
+
+		if (this.firstDeltaAt && this.lastDeltaAt) {
+			const window = (this.lastDeltaAt - this.firstDeltaAt) / 1000;
+			const tps = window > 0 && tokens > 0 ? tokens / window : this.reading.tps;
+			const ttftMs = this.startedAt ? this.firstDeltaAt - this.startedAt : this.reading.ttftMs;
+			this.reading = { tps, ttftMs, source: tps === null ? this.reading.source : "deltas" };
+			return this.reading;
+		}
+
+		if (this.startedAt) {
+			const window = (now - this.startedAt) / 1000;
+			const tps = window > 0 && tokens > 0 ? tokens / window : this.reading.tps;
+			this.reading = { tps, ttftMs: this.reading.ttftMs, source: tps === null ? this.reading.source : "window" };
+			return this.reading;
+		}
+
 		return this.reading;
 	}
 
@@ -69,6 +88,10 @@ export class TpsMeter {
 	/** Raw counters, for `/statusline debug`. */
 	snapshot(): TpsReading & { deltas: number; startedAt: number; firstDeltaAt: number } {
 		return { ...this.reading, deltas: this.deltas, startedAt: this.startedAt, firstDeltaAt: this.firstDeltaAt };
+	}
+
+	get estimated(): boolean {
+		return this.reading.source === "window";
 	}
 }
 

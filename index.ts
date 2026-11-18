@@ -111,6 +111,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			contextWindow: context?.contextWindow ?? current.model?.contextWindow ?? null,
 			cacheHitRate: usage.cacheHitRate,
 			tokensPerSecond: tps.get().tps,
+			tpsEstimated: tps.estimated,
 			durationMs: startMs === null ? null : Date.now() - startMs,
 			statuses: footerData.getExtensionStatuses(),
 		};
@@ -213,7 +214,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		const parts = [
 			`style=${config.style}`,
 			`icons=${config.icons}`,
-			`tps=${tpsText} (deltas=${reading.deltas}, started=${reading.startedAt !== 0})`,
+			`tps=${tpsText} (${reading.source ?? "none"}, deltas=${reading.deltas})`,
 			`cache=${usage.cacheHitRate === null ? "none" : `${Math.round(usage.cacheHitRate)}%`}`,
 			`context=${context?.percent ?? "?"}%/${context?.contextWindow ?? "?"}`,
 			`git=${stats.repo ? `${stats.insertions}+/${stats.deletions}-` : "none"}`,

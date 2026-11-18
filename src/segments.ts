@@ -19,6 +19,8 @@ export interface SegmentInput {
 	/** Share of the prompt served from cache on the latest turn, 0-100. */
 	cacheHitRate: number | null;
 	tokensPerSecond: number | null;
+	/** True when the rate had to be taken over the whole message window. */
+	tpsEstimated?: boolean;
 	durationMs: number | null;
 	/** Statuses other extensions publish with ctx.ui.setStatus(). */
 	statuses: ReadonlyMap<string, string>;
@@ -104,7 +106,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			}
 			case "tps": {
 				const text = fmtTps(input.tokensPerSecond);
-				if (text) push("tps", withIcon(icons.tps, { text, role: "dim" }), true, false);
+				if (text) push("tps", withIcon(icons.tps, { text: `${input.tpsEstimated ? "~" : ""}${text}`, role: "dim" }), true, false);
 				break;
 			}
 			case "duration": {
