@@ -14,6 +14,7 @@ after changing them.
     "showStatuses": true,
     "icons": "nerd",
     "style": "text",
+    "contextBar": false,
     "tickMs": 1000,
     "gitTtlMs": 5000
   }
@@ -29,6 +30,7 @@ after changing them.
 | `showStatuses` | `true` | Append the statuses other extensions publish |
 | `icons` | `"nerd"` | `"nerd"`, `"emoji"` or `"none"` |
 | `style` | `"text"` | `"text"`, `"chips"` or `"theme"`; see [Colors](#colors) |
+| `contextBar` | `false` | Draw context usage as a ten-cell bar before the numbers |
 | `tickMs` | `1000` | How often the elapsed-time segment redraws |
 | `gitTtlMs` | `5000` | How long a git snapshot stays fresh before a background refresh |
 
@@ -41,7 +43,7 @@ Unknown keys and wrong types are ignored, never fatal.
 | `model` | Active model | `chat-model` | Last path segment of `ctx.model.id`, snapshot dates dropped |
 | `thinking` | Thinking level | `󰧑 max` | Hidden when the level is `off` |
 | `dir` | Directory | `pi-statusline` | Basename of the working directory |
-| `git` | Branch | ` main` | From pi's footer data; hidden outside a repository |
+| `git` | Branch, ahead/behind | ` main ↑2 ↓1` | Branch from pi's footer data, counts from `git status`; hidden outside a repository |
 | `diff` | Line counts | `+12 −3` | `git diff HEAD --shortstat`; hidden on a clean tree |
 | `context` | Context usage | `󰡳 15%/1M` | Gauge glyph steps at 20/50/85%, color at 70/90% |
 | `cache` | Prompt cache hit rate | ` 38%` | Only appears below 50% |
@@ -70,6 +72,12 @@ Background blocks instead of colored text:
 
 ```json
 { "statusline": { "style": "chips" } }
+```
+
+A context bar instead of bare numbers:
+
+```json
+{ "statusline": { "contextBar": true } }
 ```
 
 Rename a model without touching the rest:

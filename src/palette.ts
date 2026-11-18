@@ -29,36 +29,35 @@ export interface ChipColor {
 	fg: Rgb;
 }
 
-const DARK_BG: Rgb = [40, 40, 40];
-const LIGHT_BG: Rgb = [251, 241, 199];
-const INK: Rgb = [40, 40, 40];
+/** Chip foreground for the dark, saturated backgrounds. */
+const CHIP_INK: Rgb = [251, 241, 199];
 
 /** Saturated chips for dark terminals. */
 const CHIPS_DARK: Record<Role, ChipColor> = {
-	accent: { bg: [69, 133, 136], fg: LIGHT_BG },
+	accent: { bg: [69, 133, 136], fg: CHIP_INK },
 	path: { bg: [104, 157, 106], fg: [29, 32, 33] },
-	vcs: { bg: [177, 98, 134], fg: LIGHT_BG },
-	speed: { bg: [175, 58, 3], fg: LIGHT_BG },
-	text: { bg: [80, 73, 69], fg: LIGHT_BG },
+	vcs: { bg: [177, 98, 134], fg: CHIP_INK },
+	speed: { bg: [175, 58, 3], fg: CHIP_INK },
+	text: { bg: [80, 73, 69], fg: CHIP_INK },
 	muted: { bg: [60, 56, 54], fg: [213, 196, 161] },
 	dim: { bg: [50, 48, 47], fg: [168, 153, 132] },
 	success: { bg: [152, 151, 26], fg: [29, 32, 33] },
-	error: { bg: [204, 36, 29], fg: LIGHT_BG },
+	error: { bg: [204, 36, 29], fg: CHIP_INK },
 	warning: { bg: [215, 153, 33], fg: [29, 32, 33] },
 };
 
 /** The same hues, deepened so they read as blocks on a white terminal. */
 const CHIPS_LIGHT: Record<Role, ChipColor> = {
-	accent: { bg: [7, 102, 120], fg: LIGHT_BG },
-	path: { bg: [66, 123, 88], fg: LIGHT_BG },
-	vcs: { bg: [143, 63, 113], fg: LIGHT_BG },
-	speed: { bg: [175, 58, 3], fg: LIGHT_BG },
+	accent: { bg: [7, 102, 120], fg: CHIP_INK },
+	path: { bg: [66, 123, 88], fg: CHIP_INK },
+	vcs: { bg: [143, 63, 113], fg: CHIP_INK },
+	speed: { bg: [175, 58, 3], fg: CHIP_INK },
 	text: { bg: [213, 196, 161], fg: [60, 56, 54] },
 	muted: { bg: [235, 219, 178], fg: [124, 111, 100] },
 	dim: { bg: [242, 229, 188], fg: [146, 131, 116] },
-	success: { bg: [121, 116, 14], fg: LIGHT_BG },
-	error: { bg: [157, 0, 6], fg: LIGHT_BG },
-	warning: { bg: [181, 118, 20], fg: LIGHT_BG },
+	success: { bg: [121, 116, 14], fg: CHIP_INK },
+	error: { bg: [157, 0, 6], fg: CHIP_INK },
+	warning: { bg: [181, 118, 20], fg: CHIP_INK },
 };
 
 /** Foreground-only variants: bright on dark, deep on light. */
@@ -124,4 +123,3 @@ export function defaultSeparator(style: Style): string {
 	return style === "chips" ? " " : " · ";
 }
 
-export const BACKGROUNDS = { dark: DARK_BG, light: LIGHT_BG, ink: INK };

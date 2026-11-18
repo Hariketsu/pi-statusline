@@ -1,10 +1,13 @@
 /**
- * Session token and cost totals.
+ * Session token totals.
  *
  * Mirrors what pi's built-in footer counts, so the numbers agree: usage entries,
  * assistant messages, tool results that report usage, and compaction/branch
  * summaries. The cache hit rate is taken from the latest assistant message only,
  * because that describes the current prompt, not the whole session.
+ *
+ * Cost is deliberately not accumulated: the footer does not show it, and pi's
+ * `/session` is the place to look for a bill.
  */
 
 export interface UsageTotals {
@@ -12,7 +15,6 @@ export interface UsageTotals {
 	output: number;
 	cacheRead: number;
 	cacheWrite: number;
-	cost: number;
 }
 
 export interface SessionUsage {
@@ -22,7 +24,7 @@ export interface SessionUsage {
 }
 
 export function emptyTotals(): UsageTotals {
-	return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
+	return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 }
 
 function num(value: unknown): number {
@@ -36,8 +38,6 @@ function addUsage(totals: UsageTotals, usage: unknown): void {
 	totals.output += num(u.output);
 	totals.cacheRead += num(u.cacheRead);
 	totals.cacheWrite += num(u.cacheWrite);
-	const cost = u.cost;
-	if (cost && typeof cost === "object") totals.cost += num((cost as Record<string, unknown>).total);
 }
 
 export function collectUsage(entries: readonly unknown[]): SessionUsage {

@@ -45,6 +45,8 @@ segments.ts ──▶ Segment[] (id, parts, optional, chip) ──▶ render.ts 
   paint function), which keeps the module free of pi dependencies.
 - `palette.ts` maps roles to colors and decides between theme tokens and the fixed
   palettes.
+- Width helpers are imported lazily and can be injected (`StatuslineOptions.width`), so the
+  entry point is testable in Node without pi-tui.
 
 ## How each number is produced
 
@@ -68,9 +70,12 @@ footer marks such a figure with a leading `~` instead of passing it off as measu
 Stream-driven redraws are throttled to four per second; the finish always triggers one.
 
 **Line counts** come from `git diff HEAD --shortstat`: staged and unstaged changes against
-`HEAD`, each line counted once, untracked files excluded. Reads use `--no-optional-locks` so
-they never take the index lock, and resolve `HEAD` failures (a repository with no commits) to
-zero instead of breaking the segment.
+`HEAD`, each line counted once, untracked files excluded. **Ahead/behind** come from the
+`# branch.ab +N -M` header of `git status --porcelain=v2 --branch`, which is issued in
+parallel with the shortstat read. Both use `--no-optional-locks` so they never take the index
+lock, and a failing `HEAD` (a repository with no commits) resolves to zero instead of breaking
+the segment. The branch itself comes from pi's watcher, so the first frame already shows it
+before the background read answers.
 
 **Elapsed time** is the first session entry's timestamp to now, so it survives a resume
 instead of restarting at each launch.

@@ -17,11 +17,21 @@ export interface DiffSnapshot {
 	repo: boolean;
 	insertions: number;
 	deletions: number;
+	/** Commits ahead of and behind the upstream branch; 0 without an upstream. */
+	ahead: number;
+	behind: number;
 	/** When the snapshot was taken, ms since epoch; 0 for the placeholder. */
 	at: number;
 }
 
-const PLACEHOLDER: DiffSnapshot = { repo: false, insertions: 0, deletions: 0, at: 0 };
+const PLACEHOLDER: DiffSnapshot = { repo: false, insertions: 0, deletions: 0, ahead: 0, behind: 0, at: 0 };
+
+/** Parse `# branch.ab +2 -1` out of `git status --porcelain=v2 --branch`. */
+export function parseBranchAb(text: string): { ahead: number; behind: number } {
+	const match = /^# branch\.ab \+(\d+) -(\d+)$/m.exec(text);
+	if (!match) return { ahead: 0, behind: 0 };
+	return { ahead: Number(match[1]), behind: Number(match[2]) };
+}
 
 /** Parse `git diff --shortstat` output, e.g. " 2 files changed, 12 insertions(+), 3 deletions(-)". */
 export function parseShortstat(text: string): { insertions: number; deletions: number } {
@@ -84,7 +94,9 @@ export class DiffStats {
 					!this.snapshot ||
 					this.snapshot.repo !== next.repo ||
 					this.snapshot.insertions !== next.insertions ||
-					this.snapshot.deletions !== next.deletions;
+					this.snapshot.deletions !== next.deletions ||
+					this.snapshot.ahead !== next.ahead ||
+					this.snapshot.behind !== next.behind;
 				this.snapshot = next;
 				this.cwd = cwd;
 				return changed;
@@ -98,12 +110,22 @@ export class DiffStats {
 
 	private async read(cwd: string): Promise<DiffSnapshot> {
 		const at = Date.now();
-		const shortstat = await git(cwd, ["diff", "HEAD", "--shortstat"]);
-		if (shortstat !== null) return { repo: true, ...parseShortstat(shortstat), at };
+		// Two reads, both cheap, issued together: porcelain for the branch's
+		// ahead/behind, shortstat for the working-tree line counts.
+		const [status, shortstat] = await Promise.all([
+			git(cwd, ["status", "--porcelain=v2", "--branch", "--untracked-files=no"]),
+			git(cwd, ["diff", "HEAD", "--shortstat"]),
+		]);
+
+		if (shortstat !== null) {
+			const { ahead, behind } = status === null ? { ahead: 0, behind: 0 } : parseBranchAb(status);
+			return { repo: true, ...parseShortstat(shortstat), ahead, behind, at };
+		}
 
 		// No HEAD yet (fresh repo) or a failed call: is this a work tree at all?
 		const inside = await git(cwd, ["rev-parse", "--is-inside-work-tree"]);
 		const repo = inside?.trim() === "true";
-		return { repo, insertions: 0, deletions: 0, at };
+		const { ahead, behind } = status === null ? { ahead: 0, behind: 0 } : parseBranchAb(status);
+		return { repo, insertions: 0, deletions: 0, ahead, behind, at };
 	}
 }

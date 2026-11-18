@@ -9,7 +9,6 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 import { type StatuslineConfig, loadConfig } from "./src/config.ts";
 import { ContextCache } from "./src/context.ts";
@@ -36,10 +35,34 @@ interface FooterDataLike {
 	onBranchChange(callback: () => void): () => void;
 }
 
+/** Width helpers come from pi-tui, which is imported lazily so the module can be tested without it. */
+export interface WidthTools {
+	visibleWidth(text: string): number;
+	truncateToWidth(text: string, width: number, ellipsis?: string): string;
+}
+
+export interface StatuslineOptions {
+	/** Injected width helpers, for tests; the real host loads pi-tui. */
+	width?: WidthTools;
+}
+
 /** Streaming redraws are cheap but not free; 4 per second is plenty. */
 const TPS_REDRAW_MS = 250;
 
-export default function piStatusline(pi: ExtensionAPI): void {
+export default function piStatusline(pi: ExtensionAPI, options: StatuslineOptions = {}): void {
+	let width: WidthTools | null = options.width ?? null;
+
+	async function ensureWidth(): Promise<WidthTools | null> {
+		if (width) return width;
+		try {
+			const mod = await import("@earendil-works/pi-tui");
+			width = { visibleWidth: mod.visibleWidth, truncateToWidth: mod.truncateToWidth };
+		} catch {
+			width = null; // the footer stays blank rather than breaking the host
+		}
+		return width;
+	}
+
 	const config: StatuslineConfig = loadConfig(pi);
 	const icons = iconsFor(config.icons);
 	const diff = new DiffStats(config.gitTtlMs);
@@ -82,9 +105,10 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			.join("");
 	}
 
-	function buildLine(width: number, theme: ThemeLike, footerData: FooterDataLike): string {
+	function buildLine(columns: number, theme: ThemeLike, footerData: FooterDataLike): string {
 		const current = ctx;
-		if (!current) return "";
+		const tools = width;
+		if (!current || !tools) return "";
 
 		const key = `${current.sessionManager.getSessionId()}:${current.cwd}`;
 		if (key !== sessionKey) {
@@ -96,6 +120,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		startMs ??= sessionStartMs(current.sessionManager.getEntries());
 
 		const stats = diff.get(current.cwd);
+		const branch = footerData.getGitBranch();
 		const context = contextCache.get(current);
 		const usage = usageCache.get(current);
 		const style = resolveStyle(config.style, theme.appearance ?? "dark", theme.getColorMode?.() ?? "truecolor");
@@ -103,10 +128,14 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			cwd: current.cwd,
 			modelId: current.model?.id,
 			thinkingLevel: current.thinkingLevel,
-			branch: footerData.getGitBranch(),
-			repo: stats.repo,
+			branch,
+			// pi's branch watcher only reports inside a repository, so it settles the
+			// first frame before the background git read has answered.
+			repo: stats.repo || branch !== null,
 			insertions: stats.insertions,
 			deletions: stats.deletions,
+			ahead: stats.ahead,
+			behind: stats.behind,
 			contextPercent: context?.percent ?? null,
 			contextWindow: context?.contextWindow ?? current.model?.contextWindow ?? null,
 			cacheHitRate: usage.cacheHitRate,
@@ -121,14 +150,15 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			modelNames: config.modelNames,
 			showStatuses: config.showStatuses,
 			icons,
+			contextBar: config.contextBar,
 		});
 
 		return renderSegments(segments, {
-			width,
+			width: columns,
 			separator: config.separator,
 			paint: (parts, chip) => paint(parts, chip, theme, style),
-			visibleWidth,
-			truncate: (text, limit) => truncateToWidth(text, limit),
+			visibleWidth: tools.visibleWidth,
+			truncate: (text, limit) => tools.truncateToWidth(text, limit, "…"),
 		});
 	}
 
@@ -144,6 +174,8 @@ export default function piStatusline(pi: ExtensionAPI): void {
 				if (diff.isStale()) refreshGit();
 				tui.requestRender();
 			}, config.tickMs);
+			// Never keep a host (or a test runner) alive just for the clock.
+			(ticker as { unref?: () => void }).unref?.();
 
 			const offBranch = footerData.onBranchChange(() => {
 				diff.invalidate();
@@ -164,7 +196,8 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		});
 	}
 
-	pi.on("session_start", (_event, current) => {
+	pi.on("session_start", async (_event, current) => {
+		await ensureWidth();
 		install(current);
 		refreshGit();
 	});

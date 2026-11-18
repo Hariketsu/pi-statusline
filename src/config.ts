@@ -21,6 +21,8 @@ export interface StatuslineConfig {
 	showStatuses: boolean;
 	icons: IconSet;
 	style: Style;
+	/** Draw context usage as a ten-cell bar. */
+	contextBar: boolean;
 	/** How often the elapsed-time segment redraws. */
 	tickMs: number;
 	/** How long a git snapshot stays fresh. */
@@ -48,6 +50,7 @@ export const DEFAULTS: StatuslineConfig = {
 	showStatuses: true,
 	icons: "nerd",
 	style: "text",
+	contextBar: false,
 	tickMs: 1000,
 	gitTtlMs: 5000,
 };
@@ -67,6 +70,7 @@ export function loadConfig(pi: { getSettings?: () => unknown }): StatuslineConfi
 		showStatuses: typeof value.showStatuses === "boolean" ? value.showStatuses : DEFAULTS.showStatuses,
 		icons: parseIcons(value.icons),
 		style,
+		contextBar: typeof value.contextBar === "boolean" ? value.contextBar : DEFAULTS.contextBar,
 		tickMs: clampMs(value.tickMs, DEFAULTS.tickMs, 250, 10_000),
 		gitTtlMs: clampMs(value.gitTtlMs, DEFAULTS.gitTtlMs, 500, 60_000),
 	};

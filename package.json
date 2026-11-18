@@ -2,11 +2,37 @@
 	"name": "pi-statusline",
 	"version": "0.1.0",
 	"description": "A compact, theme-aware status line for the pi coding agent",
-	"keywords": ["pi-package", "pi", "pi-coding-agent", "statusline", "status-line", "footer"],
+	"author": "Hariketsu",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Hariketsu/pi-statusline.git"
+	},
+	"homepage": "https://github.com/Hariketsu/pi-statusline#readme",
+	"bugs": {
+		"url": "https://github.com/Hariketsu/pi-statusline/issues"
+	},
+	"keywords": [
+		"pi-package",
+		"pi",
+		"pi-coding-agent",
+		"statusline",
+		"status-line",
+		"footer"
+	],
 	"license": "MIT",
 	"type": "module",
+	"files": [
+		"index.ts",
+		"src",
+		"docs",
+		"README.md",
+		"README.zh-CN.md",
+		"LICENSE"
+	],
 	"pi": {
-		"extensions": ["./index.ts"]
+		"extensions": [
+			"./index.ts"
+		]
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-coding-agent": "*",

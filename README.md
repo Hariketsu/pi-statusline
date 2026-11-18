@@ -62,7 +62,8 @@ background blocks. The full list of keys is in
 
 - [Configuration](./docs/configuration.md) — every setting, every segment
 - [How it works](./docs/internals.md) — what it reads from pi, how each number is measured
-- [Development](./docs/development.md) — tests, adding a segment, publishing
+- [Development](./docs/development.md) — tests, adding a segment
+- [Publishing](./docs/publishing.md) — npm scope, gallery, release checklist
 
 ## License
 

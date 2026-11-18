@@ -3,7 +3,7 @@
 No build step: pi loads `index.ts` directly and Node runs the TypeScript.
 
 ```sh
-node --test tests/*.test.ts     # 40 tests, no dependencies
+node --test tests/*.test.ts     # 53 tests, no dependencies
 ```
 
 Tests use Node's built-in runner and its TypeScript support, so `node_modules` stays empty.
@@ -24,6 +24,11 @@ Keep syntax that strip-types supports: no parameter properties, no enums, no dec
 | `src/git.ts` | Cached `git diff HEAD --shortstat` reads |
 | `src/context.ts` | `getContextUsage()` cache keyed by session leaf |
 | `src/config.ts` | Reads the `statusline` settings namespace |
+
+`tests/extension.test.ts` drives the real entry point through a fake host: it installs the
+footer, feeds streaming events, renders a line and reads the result. Every rendering bug so
+far lived in that wiring rather than in the pure modules, so changes to `index.ts` are expected
+to come with a test there.
 
 The rule that keeps this maintainable: **pure modules do not import pi**. `segments`,
 `render`, `palette`, `format`, `tps`, `usage`, `git` and `context` all take plain data, which
@@ -53,12 +58,9 @@ is why the tests need no pi installation and no mocks.
 
 ## Publishing
 
-The npm name `pi-statusline` is already taken by an unrelated, dormant package. Before
-publishing, scope it:
+The npm name `pi-statusline` is taken by an unrelated, dormant package, so publishing means a
+scope: `@<npm-user>/pi-statusline`. The git repository is the distribution channel until then,
+and stays a valid one afterwards.
 
-```json
-{ "name": "@<npm-user>/pi-statusline" }
-```
-
-`pi install git:github.com/Hariketsu/pi-statusline` works without publishing anything, which
-is why the repository is the distribution channel today.
+See [publishing.md](./publishing.md) for the package contents, the gallery, versioning and the
+pre-publish checklist.

@@ -57,7 +57,8 @@ pi install git:github.com/Hariketsu/pi-statusline
 
 - [配置](./docs/configuration.md) — 每个设置项、每个段
 - [工作原理](./docs/internals.md) — 从哪里取数、每个数字怎么算出来的
-- [开发](./docs/development.md) — 测试、加一段、发布
+- [开发](./docs/development.md) — 测试、加一段
+- [发布](./docs/publishing.md) — npm scope、插件画廊、发布前检查
 
 ## License
 

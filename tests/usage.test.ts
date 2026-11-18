@@ -13,10 +13,10 @@ const assistant = (usage: Record<string, unknown>, timestamp = "2026-11-18T10:00
 
 test("collectUsage sums every entry type pi's footer counts", () => {
 	const entries = [
-		assistant({ input: 100, output: 20, cacheRead: 300, cacheWrite: 50, cost: { total: 0.01 } }),
-		{ type: "usage", usage: { input: 10, output: 5, cost: { total: 0.002 } } },
+		assistant({ input: 100, output: 20, cacheRead: 300, cacheWrite: 50 }),
+		{ type: "usage", usage: { input: 10, output: 5 } },
 		{ type: "message", message: { role: "toolResult", usage: { input: 7, output: 0 } } },
-		{ type: "compaction", usage: { input: 1000, output: 100, cost: { total: 0.05 } } },
+		{ type: "compaction", usage: { input: 1000, output: 100 } },
 		{ type: "message", message: { role: "user" } },
 	];
 
@@ -26,7 +26,6 @@ test("collectUsage sums every entry type pi's footer counts", () => {
 		output: 125,
 		cacheRead: 300,
 		cacheWrite: 50,
-		cost: 0.062,
 	});
 	// Only the assistant message above has a prompt, so it sets the hit rate.
 	assert.equal(cacheHitRate, 300 / 450 * 100);

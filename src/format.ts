@@ -1,4 +1,4 @@
-/** Number, duration and cost formatting. Kept pure so tests do not need pi. */
+/** Number, duration and model-name formatting. Kept pure so tests do not need pi. */
 
 export function fmtTokens(n: number): string {
 	if (!Number.isFinite(n) || n <= 0) return "0";
@@ -17,13 +17,6 @@ export function fmtDuration(ms: number): string {
 	if (hours < 24) return minutes % 60 ? `${hours}h${minutes % 60}m` : `${hours}h`;
 	const days = Math.floor(hours / 24);
 	return hours % 24 ? `${days}d${hours % 24}h` : `${days}d`;
-}
-
-export function fmtCost(usd: number): string {
-	if (!Number.isFinite(usd) || usd <= 0) return "$0";
-	if (usd < 0.01) return "<$0.01";
-	if (usd < 10) return `$${usd.toFixed(2)}`;
-	return `$${usd.toFixed(1)}`;
 }
 
 export function fmtPercent(percent: number | null | undefined): string {

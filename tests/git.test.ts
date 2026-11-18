@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 
-import { DiffStats, parseShortstat } from "../src/git.ts";
+import { DiffStats, parseBranchAb, parseShortstat } from "../src/git.ts";
 
 const dirs: string[] = [];
 after(() => {
@@ -19,6 +19,12 @@ test("parseShortstat reads insertions and deletions independently", () => {
 		insertions: 12,
 		deletions: 3,
 	});
+});
+
+test("parseBranchAb reads the porcelain v2 branch line", () => {
+	assert.deepEqual(parseBranchAb("# branch.oid abc\n# branch.head main\n# branch.ab +2 -1"), { ahead: 2, behind: 1 });
+	assert.deepEqual(parseBranchAb("# branch.oid abc\n# branch.head main"), { ahead: 0, behind: 0 });
+	assert.deepEqual(parseBranchAb(""), { ahead: 0, behind: 0 });
 });
 
 test("counts a dirty work tree against HEAD", async () => {
@@ -38,7 +44,14 @@ test("counts a dirty work tree against HEAD", async () => {
 
 	const stats = new DiffStats(0);
 	await stats.refresh(dir);
-	assert.deepEqual(stats.get(dir), { repo: true, insertions: 0, deletions: 0, at: stats.get(dir).at });
+	assert.deepEqual(stats.get(dir), {
+		repo: true,
+		insertions: 0,
+		deletions: 0,
+		ahead: 0,
+		behind: 0,
+		at: stats.get(dir).at,
+	});
 
 	writeFileSync(join(dir, "a.txt"), "one\nTWO\nthree\n");
 	await stats.refresh(dir);

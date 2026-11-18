@@ -14,6 +14,8 @@ function baseInput(overrides: Partial<SegmentInput> = {}): SegmentInput {
 		repo: true,
 		insertions: 12,
 		deletions: 3,
+		ahead: 0,
+		behind: 0,
 		contextPercent: 23,
 		contextWindow: 1_000_000,
 		cacheHitRate: 100,
@@ -74,6 +76,24 @@ test("an icon shares its value's role so both paint as one block", () => {
 	assert.equal(new Set(context.parts.map((part) => part.role)).size, 1);
 	assert.equal(groupRuns(context.parts).length, 1);
 	assert.ok(context.parts[0].text.startsWith("\u{F0873}") || context.parts[0].text.startsWith("\u{F0875}"));
+});
+
+test("ahead and behind join the branch when the upstream differs", () => {
+	const parts = buildSegments(baseInput({ ahead: 2, behind: 1 }), plan).find((s) => s.id === "git")?.parts ?? [];
+	assert.deepEqual(
+		parts.map((part) => part.text),
+		["feat/pi-statusline-plugin", " ↑2", " ↓1"],
+	);
+	// Up to date: the counts stay off the line.
+	const clean = buildSegments(baseInput(), plan).find((s) => s.id === "git")?.parts ?? [];
+	assert.equal(clean.length, 1);
+});
+
+test("the optional context bar keeps its numbers", () => {
+	const withBar = buildSegments(baseInput({ contextPercent: 23 }), { ...plan, contextBar: true });
+	assert.equal(withBar.find((s) => s.id === "context")?.parts.at(-1)?.text, "██░░░░░░░░ 23%/1M");
+	const without = buildSegments(baseInput({ contextPercent: 23 }), plan);
+	assert.equal(without.find((s) => s.id === "context")?.parts.at(-1)?.text, "23%/1M");
 });
 
 test("git and diff disappear when there is nothing to show", () => {

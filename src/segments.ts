@@ -14,6 +14,9 @@ export interface SegmentInput {
 	repo: boolean;
 	insertions: number;
 	deletions: number;
+	/** Commits ahead of and behind the upstream branch. */
+	ahead: number;
+	behind: number;
 	contextPercent: number | null;
 	contextWindow: number | null;
 	/** Share of the prompt served from cache on the latest turn, 0-100. */
@@ -31,6 +34,8 @@ export interface SegmentOptions {
 	modelNames?: Record<string, string>;
 	showStatuses?: boolean;
 	icons?: Icons;
+	/** Draw context usage as a ten-cell bar before the numbers. */
+	contextBar?: boolean;
 }
 
 const DEFAULT_ORDER: SegmentId[] = [
@@ -74,7 +79,10 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				break;
 			case "git": {
 				if (!input.branch || !input.repo) break;
-				push("git", withIcon(icons.git, { text: input.branch, role: "vcs" }), true);
+				const parts = withIcon(icons.git, { text: input.branch, role: "vcs" });
+				if (input.ahead > 0) parts.push({ text: ` ↑${input.ahead}`, role: "dim" });
+				if (input.behind > 0) parts.push({ text: ` ↓${input.behind}`, role: "dim" });
+				push("git", parts, true);
 				break;
 			}
 			case "diff": {
@@ -89,7 +97,8 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 				if (input.contextPercent === null || !input.contextWindow) break;
 				const percent = input.contextPercent;
 				const role = contextRole(percent);
-				const text = `${fmtPercent(percent)}/${fmtTokensShort(input.contextWindow)}`;
+				const numbers = `${fmtPercent(percent)}/${fmtTokensShort(input.contextWindow)}`;
+				const text = options.contextBar ? `${contextBarCells(percent)} ${numbers}` : numbers;
 				push("context", withIcon(contextGauge(icons, percent), { text, role }));
 				break;
 			}
@@ -124,6 +133,11 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 	}
 
 	return segments;
+}
+
+function contextBarCells(percent: number): string {
+	const filled = Math.min(10, Math.max(0, Math.round(percent / 10)));
+	return `${"█".repeat(filled)}${"░".repeat(10 - filled)}`;
 }
 
 /** The icon takes the value's role, so both land in one chip (or one colored run). */

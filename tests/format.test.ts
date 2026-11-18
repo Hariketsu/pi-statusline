@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { basename, fmtCost, fmtDuration, fmtPercent, fmtTokens, shortModel } from "../src/format.ts";
+import { basename, fmtDuration, fmtPercent, fmtTokens, shortModel } from "../src/format.ts";
 
 test("fmtTokens keeps small numbers exact and shortens large ones", () => {
 	assert.equal(fmtTokens(0), "0");
@@ -20,13 +20,6 @@ test("fmtDuration drops empty units", () => {
 	assert.equal(fmtDuration(3_720_000), "1h2m");
 	assert.equal(fmtDuration(7_200_000), "2h");
 	assert.equal(fmtDuration(183_600_000), "2d3h");
-});
-
-test("fmtCost stays readable across magnitudes", () => {
-	assert.equal(fmtCost(0), "$0");
-	assert.equal(fmtCost(0.004), "<$0.01");
-	assert.equal(fmtCost(0.42), "$0.42");
-	assert.equal(fmtCost(12.345), "$12.3");
 });
 
 test("fmtPercent rounds within a tier", () => {
