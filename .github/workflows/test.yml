@@ -1,9 +1,38 @@
 name: test
 
+# Whitelist, not a blacklist: everything not listed here (prose docs, publishing and
+# development notes, the preview image, LICENSE) skips CI. Two docs are listed because
+# tests/docs.test.ts parses them — they are part of the test surface, not just prose.
+#
+# GitHub does not support YAML anchors in workflows, so the list appears twice.
 on:
   push:
     branches: [main]
+    paths:
+      - "index.ts"
+      - "src/**"
+      - "tests/**"
+      - "scripts/**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/**"
+      - "README.md"
+      - "README.zh-CN.md"
+      - "docs/configuration.md"
+      - "docs/internals.md"
   pull_request:
+    paths:
+      - "index.ts"
+      - "src/**"
+      - "tests/**"
+      - "scripts/**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/**"
+      - "README.md"
+      - "README.zh-CN.md"
+      - "docs/configuration.md"
+      - "docs/internals.md"
 
 # Superseded runs on the same ref are pointless.
 concurrency:
