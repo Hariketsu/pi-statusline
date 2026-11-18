@@ -76,16 +76,18 @@ const TEXT_DARK: Record<Role, Rgb> = {
 };
 
 const TEXT_LIGHT: Record<Role, Rgb> = {
-	accent: [7, 102, 120],
-	path: [66, 123, 88],
-	vcs: [143, 63, 113],
-	speed: [175, 58, 3],
-	text: [60, 56, 54],
-	muted: [124, 111, 100],
-	dim: [146, 131, 116],
-	success: [121, 116, 14],
-	error: [157, 0, 6],
-	warning: [181, 118, 20],
+	// Measured from the Claude Code bar on a light terminal: the identity colors are
+	// the same Gruvbox values as on dark, and only the quiet text is a mid grey.
+	accent: [69, 133, 136], // #458588
+	path: [104, 157, 106], // #689D6A
+	vcs: [177, 98, 134], // #B16286
+	speed: [175, 58, 3], // #AF3A03
+	text: [60, 56, 54], // #3C3836
+	muted: [107, 107, 107], // #6B6B6B
+	dim: [138, 138, 138], // #8A8A8A
+	success: [152, 151, 26], // #98971A
+	error: [204, 36, 29], // #CC241D
+	warning: [215, 153, 33], // #D79921
 };
 
 export type ResolvedStyle =

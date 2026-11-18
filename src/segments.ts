@@ -58,7 +58,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 		switch (id) {
 			case "model": {
 				const mapped = lookupModelName(input.modelId, options.modelNames ?? {});
-				push("model", [{ text: mapped ?? shortModel(input.modelId), role: "accent", bold: true }]);
+				push("model", [{ text: mapped ?? shortModel(input.modelId), role: "accent" }]);
 				break;
 			}
 			case "thinking": {
@@ -108,7 +108,7 @@ export function buildSegments(input: SegmentInput, options: SegmentOptions = {})
 			}
 			case "duration": {
 				if (input.durationMs === null) break;
-				push("duration", withIcon(icons.duration, { text: fmtDuration(input.durationMs), role: "muted" }), true, false);
+				push("duration", withIcon(icons.duration, { text: fmtDuration(input.durationMs), role: "dim" }), true, false);
 				break;
 			}
 			case "statuses": {

@@ -23,6 +23,19 @@ test("chips pick a light or dark palette from the appearance", () => {
 	}
 });
 
+test("light identity colors match the Claude Code bar they were sampled from", () => {
+	const light = resolveStyle("text", "light", "truecolor");
+	assert.equal(light.kind, "text");
+	if (light.kind !== "text") return;
+	// Sampled from a light-terminal screenshot of the original bar: the identity
+	// colors are the same Gruvbox values as on dark, not darkened variants.
+	assert.deepEqual(light.colors.accent, [69, 133, 136]);
+	assert.deepEqual(light.colors.path, [104, 157, 106]);
+	assert.deepEqual(light.colors.vcs, [177, 98, 134]);
+	assert.deepEqual(light.colors.dim, [138, 138, 138]);
+	assert.deepEqual(light.colors.muted, [107, 107, 107]);
+});
+
 test("text style is foreground-only, theme style defers to pi", () => {
 	const text = resolveStyle("text", "light", "truecolor");
 	assert.equal(text.kind, "text");
