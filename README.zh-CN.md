@@ -3,7 +3,7 @@
 [English](./README.md) | 中文
 
 [![npm 版本](https://img.shields.io/npm/v/@hariketsu/pi-statusline?style=flat-square&color=458588)](https://www.npmjs.com/package/@hariketsu/pi-statusline)
-[![npm 下载量](https://img.shields.io/npm/dm/@hariketsu/pi-statusline?style=flat-square&color=689D6A)](https://www.npmjs.com/package/@hariketsu/pi-statusline)
+[![node](https://img.shields.io/badge/node-%E2%89%A522.19-689D6A?style=flat-square)](https://nodejs.org)
 [![测试](https://github.com/Hariketsu/pi-statusline/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Hariketsu/pi-statusline/actions/workflows/test.yml)
 [![许可证](https://img.shields.io/npm/l/@hariketsu/pi-statusline?style=flat-square&color=B16286)](./LICENSE)
 [![pi 插件](https://img.shields.io/badge/pi-package-458588?style=flat-square)](https://pi.dev/packages/@hariketsu/pi-statusline)

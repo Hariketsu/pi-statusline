@@ -50,6 +50,13 @@ The gallery at [pi.dev/packages](https://pi.dev/packages) lists npm packages tha
 after the next publish. `pi.image` in the manifest adds a preview image; a recorded terminal
 GIF or a screenshot of the footer in context is the difference between a click and a scroll.
 
+## Badges
+
+Two of them need time: npm's download API indexes a package a day or so after the first
+publish, so an `npm/dm` badge reads "package not found or too new" until then — add it back
+after the first day rather than shipping a red badge. The Actions badge reads "no status"
+until the first workflow run finishes on the default branch.
+
 ## Versioning
 
 Nothing is released yet, so `0.1.0` is the first tag. After that, keep it boring:
