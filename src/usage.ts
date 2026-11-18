@@ -84,3 +84,25 @@ export function sessionStartMs(entries: readonly unknown[], fallback = Date.now(
 	}
 	return fallback;
 }
+
+/**
+ * Caches the session totals by leaf id. Reading the branch copies every entry,
+ * which is too much work for a footer that also redraws while tokens stream in.
+ */
+export class SessionUsageCache {
+	private leafId: string | null | undefined;
+	private value: SessionUsage = { totals: emptyTotals(), cacheHitRate: null };
+
+	get(source: { sessionManager: { getLeafId(): string | null; getBranch(): unknown[] } }): SessionUsage {
+		const leafId = source.sessionManager.getLeafId();
+		if (leafId !== this.leafId) {
+			this.leafId = leafId;
+			this.value = collectUsage(source.sessionManager.getBranch());
+		}
+		return this.value;
+	}
+
+	reset(): void {
+		this.leafId = undefined;
+	}
+}

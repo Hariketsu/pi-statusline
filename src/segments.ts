@@ -1,8 +1,9 @@
 /** Builds the status line's segments from session state. Pure: no pi imports. */
 
-import { basename, fmtCost, fmtDuration, fmtPercent, fmtTokens, shortModel } from "./format.ts";
-import type { SessionUsage } from "./usage.ts";
-import type { Role, Segment, SegmentId } from "./types.ts";
+import { basename, fmtDuration, fmtPercent, shortModel } from "./format.ts";
+import { contextGauge, type Icons, iconsFor } from "./icons.ts";
+import { fmtTps } from "./tps.ts";
+import type { Part, Role, Segment, SegmentId } from "./types.ts";
 
 export interface SegmentInput {
 	cwd: string;
@@ -15,16 +16,19 @@ export interface SegmentInput {
 	deletions: number;
 	contextPercent: number | null;
 	contextWindow: number | null;
-	usage: SessionUsage;
+	/** Share of the prompt served from cache on the latest turn, 0-100. */
+	cacheHitRate: number | null;
+	tokensPerSecond: number | null;
 	durationMs: number | null;
 	/** Statuses other extensions publish with ctx.ui.setStatus(). */
 	statuses: ReadonlyMap<string, string>;
 }
 
 export interface SegmentOptions {
-	order: SegmentId[];
-	modelNames: Record<string, string>;
-	showStatuses: boolean;
+	order?: SegmentId[];
+	modelNames?: Record<string, string>;
+	showStatuses?: boolean;
+	icons?: Icons;
 }
 
 const DEFAULT_ORDER: SegmentId[] = [
@@ -33,65 +37,76 @@ const DEFAULT_ORDER: SegmentId[] = [
 	"dir",
 	"git",
 	"context",
-	"usage",
+	"cache",
+	"tps",
 	"duration",
 	"statuses",
 ];
 
-export function buildSegments(input: SegmentInput, options: Partial<SegmentOptions> = {}): Segment[] {
+export function buildSegments(input: SegmentInput, options: SegmentOptions = {}): Segment[] {
 	const order = options.order?.length ? options.order : DEFAULT_ORDER;
+	const icons = options.icons ?? iconsFor("nerd");
 	const segments: Segment[] = [];
-	const push = (id: SegmentId, text: string, role: Role, optional = false) => {
-		if (text) segments.push({ id, text, role, optional });
+
+	const push = (id: SegmentId, parts: Part[], optional = false) => {
+		const visible = parts.filter((part) => part.text.length > 0);
+		if (visible.length === 0) return;
+		if (!visible.some((part) => part.text.trim().length > 0)) return;
+		segments.push({ id, parts: visible, optional });
 	};
 
 	for (const id of order) {
 		switch (id) {
 			case "model": {
 				const mapped = lookupModelName(input.modelId, options.modelNames ?? {});
-				push("model", mapped ?? shortModel(input.modelId), "accent");
+				push("model", [{ text: mapped ?? shortModel(input.modelId), role: "accent", bold: true }]);
 				break;
 			}
 			case "thinking": {
 				const level = input.thinkingLevel;
-				if (level && level !== "off") push("thinking", level, "dim");
+				if (!level || level === "off") break;
+				push("thinking", withIcon(icons.thinking, { text: level, role: "text" }));
 				break;
 			}
 			case "dir":
-				push("dir", basename(input.cwd), "muted");
+				push("dir", [{ text: basename(input.cwd), role: "text" }]);
 				break;
 			case "git": {
 				if (!input.branch || !input.repo) break;
-				const counts =
-					input.insertions || input.deletions
-						? ` +${input.insertions} −${input.deletions}`
-						: "";
-				push("git", `${input.branch}${counts}`, "muted", true);
+				const parts = withIcon(icons.git, { text: input.branch, role: "muted" });
+				if (input.insertions > 0) parts.push({ text: ` +${input.insertions}`, role: "success" });
+				if (input.deletions > 0) parts.push({ text: ` −${input.deletions}`, role: "error" });
+				push("git", parts, true);
 				break;
 			}
 			case "context": {
 				if (input.contextPercent === null || !input.contextWindow) break;
-				const window = fmtTokens(input.contextWindow);
-				push("context", `${fmtPercent(input.contextPercent)}/${window}`, contextRole(input.contextPercent));
+				const percent = input.contextPercent;
+				const role = contextRole(percent);
+				const text = `${fmtPercent(percent)}/${fmtTokensShort(input.contextWindow)}`;
+				push("context", withIcon(contextGauge(icons, percent), { text, role }, role));
 				break;
 			}
-			case "usage": {
-				const { totals, cacheHitRate } = input.usage;
-				const parts: string[] = [];
-				const tokens = totals.input + totals.output;
-				if (tokens > 0) parts.push(`${fmtTokens(tokens)} tok`);
-				if (cacheHitRate !== null) parts.push(`${Math.round(cacheHitRate)}% cache`);
-				if (totals.cost > 0) parts.push(fmtCost(totals.cost));
-				push("usage", parts.join(" · "), "dim", true);
+			case "cache": {
+				if (input.cacheHitRate === null) break;
+				push("cache", withIcon(icons.cache, { text: `${Math.round(input.cacheHitRate)}%`, role: cacheRole(input.cacheHitRate) }));
 				break;
 			}
-			case "duration":
-				if (input.durationMs !== null) push("duration", fmtDuration(input.durationMs), "dim", true);
+			case "tps": {
+				const text = fmtTps(input.tokensPerSecond);
+				if (!text) break;
+				push("tps", [{ text, role: "text" }], true);
 				break;
+			}
+			case "duration": {
+				if (input.durationMs === null) break;
+				push("duration", withIcon(icons.duration, { text: fmtDuration(input.durationMs), role: "dim" }), true);
+				break;
+			}
 			case "statuses": {
 				if (options.showStatuses === false || input.statuses.size === 0) break;
 				const text = [...input.statuses.values()].filter(Boolean).join(" · ");
-				push("statuses", text, "muted", true);
+				if (text) push("statuses", [{ text, role: "muted" }], true);
 				break;
 			}
 		}
@@ -100,10 +115,33 @@ export function buildSegments(input: SegmentInput, options: Partial<SegmentOptio
 	return segments;
 }
 
+/** Prefixes a dim icon and a space when the icon set has one. */
+function withIcon(icon: string, part: Part, iconRole: Role = "muted"): Part[] {
+	if (!icon) return [{ ...part }];
+	return [{ text: icon, role: iconRole }, { text: " ", role: iconRole }, { ...part }];
+}
+
 function contextRole(percent: number): Role {
 	if (percent > 90) return "error";
 	if (percent > 70) return "warning";
-	return "dim";
+	return "text";
+}
+
+function cacheRole(percent: number): Role {
+	if (percent >= 80) return "success";
+	if (percent >= 50) return "text";
+	return "warning";
+}
+
+/** Context windows are round numbers: 500k, 1M. */
+function fmtTokensShort(n: number): string {
+	if (n >= 1_000_000) return `${trimZero((n / 1_000_000).toFixed(1))}M`;
+	if (n >= 1000) return `${Math.round(n / 1000)}k`;
+	return String(n);
+}
+
+function trimZero(value: string): string {
+	return value.replace(/\.0$/, "");
 }
 
 function lookupModelName(id: string | undefined, names: Record<string, string>): string | null {

@@ -4,11 +4,12 @@
  * Read from pi's settings under the `statusline` key, so it lives next to the
  * rest of your pi settings:
  *
- *   { "statusline": { "segments": ["model", "git", "context"], "separator": " | " } }
+ *   { "statusline": { "segments": ["model", "git", "context"], "icons": "emoji" } }
  *
  * Unknown keys and wrong types are ignored rather than failing the extension.
  */
 
+import type { IconSet } from "./icons.ts";
 import type { SegmentId } from "./types.ts";
 
 export interface StatuslineConfig {
@@ -17,6 +18,7 @@ export interface StatuslineConfig {
 	separator: string;
 	modelNames: Record<string, string>;
 	showStatuses: boolean;
+	icons: IconSet;
 	/** How often the elapsed-time segment redraws. */
 	tickMs: number;
 	/** How long a git snapshot stays fresh. */
@@ -29,7 +31,8 @@ export const KNOWN_SEGMENTS: SegmentId[] = [
 	"dir",
 	"git",
 	"context",
-	"usage",
+	"cache",
+	"tps",
 	"duration",
 	"statuses",
 ];
@@ -40,6 +43,7 @@ export const DEFAULTS: StatuslineConfig = {
 	separator: " · ",
 	modelNames: {},
 	showStatuses: true,
+	icons: "nerd",
 	tickMs: 1000,
 	gitTtlMs: 5000,
 };
@@ -56,6 +60,7 @@ export function loadConfig(pi: { getSettings?: () => unknown }): StatuslineConfi
 		separator: typeof value.separator === "string" ? value.separator : DEFAULTS.separator,
 		modelNames: parseModelNames(value.modelNames),
 		showStatuses: typeof value.showStatuses === "boolean" ? value.showStatuses : DEFAULTS.showStatuses,
+		icons: parseIcons(value.icons),
 		tickMs: clampMs(value.tickMs, DEFAULTS.tickMs, 250, 10_000),
 		gitTtlMs: clampMs(value.gitTtlMs, DEFAULTS.gitTtlMs, 500, 60_000),
 	};
@@ -88,6 +93,10 @@ function parseModelNames(value: unknown): Record<string, string> {
 		if (typeof name === "string" && name) out[key] = name;
 	}
 	return out;
+}
+
+function parseIcons(value: unknown): IconSet {
+	return value === "emoji" || value === "none" || value === "nerd" ? value : DEFAULTS.icons;
 }
 
 function clampMs(value: unknown, fallback: number, min: number, max: number): number {

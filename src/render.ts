@@ -5,12 +5,12 @@
  * extension) so this module stays testable without pi installed.
  */
 
-import type { Role, Segment } from "./types.ts";
+import type { Part, Segment } from "./types.ts";
 
 export interface RenderOptions {
 	width: number;
 	separator: string;
-	colorize(role: Role, text: string): string;
+	colorize(part: Part): string;
 	visibleWidth(text: string): number;
 	truncate(text: string, width: number): string;
 }
@@ -21,7 +21,7 @@ export function renderSegments(segments: Segment[], options: RenderOptions): str
 	const kept = [...segments];
 
 	const build = (): string =>
-		kept.map((segment) => colorize(segment.role, segment.text)).join(colorize("dim", separator));
+		kept.map((segment) => segment.parts.map(colorize).join("")).join(colorize({ text: separator, role: "dim" }));
 
 	let line = build();
 	while (visibleWidth(line) > width) {

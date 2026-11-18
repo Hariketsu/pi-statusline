@@ -2,10 +2,10 @@
  * pi-statusline — a compact, theme-aware status line for the pi coding agent.
  *
  * Replaces pi's footer with one line: model, thinking level, directory, git
- * branch and working-tree line counts, context usage, session tokens/cost, and
- * elapsed time. Colors come from the active pi theme, so light, dark and system
- * themes all work. Statuses other extensions publish with ctx.ui.setStatus()
- * are appended, so replacing the footer hides nothing.
+ * branch and working-tree line counts, context usage, prompt cache hit rate,
+ * generation throughput, and elapsed time. Colors come from the active pi theme,
+ * so light, dark and system themes all work. Statuses other extensions publish
+ * with ctx.ui.setStatus() are appended, so replacing the footer hides nothing.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -14,13 +14,17 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { type StatuslineConfig, loadConfig } from "./src/config.ts";
 import { ContextCache } from "./src/context.ts";
 import { DiffStats } from "./src/git.ts";
+import { iconsFor } from "./src/icons.ts";
 import { renderSegments } from "./src/render.ts";
 import { type SegmentInput, buildSegments } from "./src/segments.ts";
-import { collectUsage, sessionStartMs } from "./src/usage.ts";
+import { TpsMeter } from "./src/tps.ts";
+import type { Part } from "./src/types.ts";
+import { SessionUsageCache, sessionStartMs } from "./src/usage.ts";
 
 /** Structural views of pi's theme and footer data, so no runtime import is needed. */
 interface ThemeLike {
 	fg(color: string, text: string): string;
+	bold(text: string): string;
 }
 
 interface FooterDataLike {
@@ -29,10 +33,16 @@ interface FooterDataLike {
 	onBranchChange(callback: () => void): () => void;
 }
 
+/** Streaming redraws are cheap but not free; 4 per second is plenty. */
+const TPS_REDRAW_MS = 250;
+
 export default function piStatusline(pi: ExtensionAPI): void {
 	const config: StatuslineConfig = loadConfig(pi);
+	const icons = iconsFor(config.icons);
 	const diff = new DiffStats(config.gitTtlMs);
 	const contextCache = new ContextCache();
+	const usageCache = new SessionUsageCache();
+	const tps = new TpsMeter();
 
 	let ctx: ExtensionContext | null = null;
 	let redraw: (() => void) | null = null;
@@ -40,6 +50,7 @@ export default function piStatusline(pi: ExtensionAPI): void {
 	let enabled = config.enabled;
 	let sessionKey: string | null = null;
 	let startMs: number | null = null;
+	let lastTpsRedraw = 0;
 
 	function stopTicker(): void {
 		if (ticker) clearInterval(ticker);
@@ -55,6 +66,11 @@ export default function piStatusline(pi: ExtensionAPI): void {
 		});
 	}
 
+	function colorize(part: Part, theme: ThemeLike): string {
+		const text = theme.fg(part.role, part.text);
+		return part.bold ? theme.bold(text) : text;
+	}
+
 	function buildLine(width: number, theme: ThemeLike, footerData: FooterDataLike): string {
 		const current = ctx;
 		if (!current) return "";
@@ -64,11 +80,13 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			sessionKey = key;
 			startMs = null;
 			contextCache.reset();
+			usageCache.reset();
 		}
 		startMs ??= sessionStartMs(current.sessionManager.getEntries());
 
 		const stats = diff.get(current.cwd);
 		const context = contextCache.get(current);
+		const usage = usageCache.get(current);
 		const input: SegmentInput = {
 			cwd: current.cwd,
 			modelId: current.model?.id,
@@ -79,7 +97,8 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			deletions: stats.deletions,
 			contextPercent: context?.percent ?? null,
 			contextWindow: context?.contextWindow ?? current.model?.contextWindow ?? null,
-			usage: collectUsage(current.sessionManager.getBranch()),
+			cacheHitRate: usage.cacheHitRate,
+			tokensPerSecond: tps.get().tps,
 			durationMs: startMs === null ? null : Date.now() - startMs,
 			statuses: footerData.getExtensionStatuses(),
 		};
@@ -88,12 +107,13 @@ export default function piStatusline(pi: ExtensionAPI): void {
 			order: config.segments,
 			modelNames: config.modelNames,
 			showStatuses: config.showStatuses,
+			icons,
 		});
 
 		return renderSegments(segments, {
 			width,
 			separator: config.separator,
-			colorize: (role, text) => theme.fg(role, text),
+			colorize: (part) => colorize(part, theme),
 			visibleWidth,
 			truncate: (text, limit) => truncateToWidth(text, limit),
 		});
@@ -133,6 +153,29 @@ export default function piStatusline(pi: ExtensionAPI): void {
 	pi.on("session_start", (_event, current) => {
 		install(current);
 		refreshGit();
+	});
+
+	// Throughput comes from the stream itself: the window between the first and
+	// the last delta of an assistant message, divided into its output tokens.
+	pi.on("message_start", (event) => {
+		const message = event.message as { role?: string } | undefined;
+		if (message?.role === "assistant") tps.start();
+	});
+
+	pi.on("message_update", () => {
+		tps.delta();
+		const now = Date.now();
+		if (now - lastTpsRedraw < TPS_REDRAW_MS) return;
+		lastTpsRedraw = now;
+		redraw?.();
+	});
+
+	pi.on("message_end", (event) => {
+		const message = event.message as { role?: string; usage?: { output?: number } } | undefined;
+		if (message?.role !== "assistant") return;
+		const output = message.usage?.output;
+		tps.finish(typeof output === "number" ? output : null);
+		redraw?.();
 	});
 
 	// The working tree and token totals change with every turn; the elapsed-time
