@@ -25,7 +25,7 @@ const NERD: Icons = {
 	git: "\u{F418}", // nf-oct-git_branch
 	context: ["\u{F0873}", "\u{F0875}", "\u{F029A}", "\u{F0874}"], // nf-md-gauge_empty/low/mid/full
 	cache: "\u{F0E7}", // nf-fa-bolt
-	tps: "\u{F0E4}", // nf-fa-tachometer
+	tps: "\u{F04C5}", // nf-md-speedometer
 	duration: "\u{F0150}", // nf-md-clock_outline
 };
 

@@ -5,7 +5,7 @@ which model is answering, where you are, what changed, how much context is left,
 how fast the tokens are coming.
 
 ```
-chat-model · 󰧑 max · pi-statusline ·  main +12 −3 · 󰡳 15%/1M · 󰓅 42.4t/s · 󰅐 1h2m
+chat-model · 󰧑 max · pi-statusline ·  main +12 −3 · 󰡳 15%/1M · 󰓅 42.4t/s · 󰅐 1h2m
 ```
 
 Colors are picked for your terminal: the light and dark Gruvbox palettes are chosen from

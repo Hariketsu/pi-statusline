@@ -18,7 +18,7 @@ test("nerd glyphs are single private-use code points, not escapes plus digits", 
 		[icons.context[2], 0xf029a],
 		[icons.context[3], 0xf0874],
 		[icons.cache, 0xf0e7],
-		[icons.tps, 0xf0e4],
+		[icons.tps, 0xf04c5],
 		[icons.duration, 0xf0150],
 	];
 	for (const [glyph, code] of expected) {

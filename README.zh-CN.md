@@ -5,7 +5,7 @@
 编辑器下方的一行状态栏，只放你干活时真的会看的东西：这个模型是谁在答、你在哪个目录、改了多少行、上下文还剩多少、出字有多快。
 
 ```
-chat-model · 󰧑 max · pi-statusline ·  main +12 −3 · 󰡳 15%/1M · 󰓅 42.4t/s · 󰅐 1h2m
+chat-model · 󰧑 max · pi-statusline ·  main +12 −3 · 󰡳 15%/1M · 󰓅 42.4t/s · 󰅐 1h2m
 ```
 
 颜色按终端明暗自动选 Gruvbox Light / Dark，白底黑底都耐看。
